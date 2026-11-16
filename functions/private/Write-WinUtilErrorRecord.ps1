@@ -12,7 +12,7 @@ function Write-WinUtilErrorRecord {
             The error to report, normally $_ from a catch block.
 
         .PARAMETER Component
-            Which part of WinUtil was running, for example Install or UI.
+            Which part of APBOptimizer was running, for example Tweaks or UI.
 
         .PARAMETER Context
             What was being attempted, for example the button name or the package.
@@ -21,7 +21,7 @@ function Write-WinUtilErrorRecord {
         [Parameter(Mandatory)]
         $ErrorRecord,
 
-        [string]$Component = "WinUtil",
+        [string]$Component = "APBOptimizer",
 
         [string]$Context,
 
@@ -53,6 +53,6 @@ function Write-WinUtilErrorRecord {
     }
 
     if (-not $DetailOnly) {
-        Write-WinUtilHost "$Component : $headline" -ForegroundColor Red
+        Write-Host "$Component : $headline" -ForegroundColor Red
     }
 }

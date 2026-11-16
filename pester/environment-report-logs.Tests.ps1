@@ -15,19 +15,24 @@ Describe "Get-WinUtilRecentLogs" {
         "recent session log" | Out-File -FilePath $recentPath -Encoding utf8
         (Get-Item $recentPath).LastWriteTime = (Get-Date).AddDays(-1)
 
+        $apbPath = Join-Path $script:logDir "APBOptimizer_2026-08-21_10-00-00.log"
+        "APBOptimizer session log" | Out-File -FilePath $apbPath -Encoding utf8
+        (Get-Item $apbPath).LastWriteTime = (Get-Date).AddDays(-1)
+
         $oldPath = Join-Path $script:logDir "winutil_2026-07-01_10-00-00.log"
         "old session log" | Out-File -FilePath $oldPath -Encoding utf8
         (Get-Item $oldPath).LastWriteTime = (Get-Date).AddDays(-30)
 
-        $unrelatedPath = Join-Path $script:logDir "notes.txt"
+        $unrelatedPath = Join-Path $script:logDir "notes.log"
         "unrelated file" | Out-File -FilePath $unrelatedPath -Encoding utf8
         (Get-Item $unrelatedPath).LastWriteTime = (Get-Date).AddDays(-1)
     }
 
-    It "includes only winutil_*.log files within the day window" {
+    It "includes APBOptimizer and legacy WinUtil logs within the day window" {
         $result = Get-WinUtilRecentLogs -Days 7 -LogDirectory $script:logDir
 
         $result | Should -Match "recent session log"
+        $result | Should -Match "APBOptimizer session log"
         $result | Should -Not -Match "old session log"
         $result | Should -Not -Match "unrelated file"
     }

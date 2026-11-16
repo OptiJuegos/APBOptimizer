@@ -20,7 +20,7 @@ function Reset-WPFCheckBoxes {
         [Parameter(position=1)]
         [string]$checkboxfilterpattern = "**"
     )
-    $selectedSet = [System.Collections.Generic.HashSet[string]]::new([string[]]@($sync.selectedApps + $sync.selectedTweaks + $sync.selectedFeatures + $sync.selectedAppx), [StringComparer]::OrdinalIgnoreCase)
+    $selectedSet = [System.Collections.Generic.HashSet[string]]::new([string[]]@($sync.selectedTweaks), [StringComparer]::OrdinalIgnoreCase)
 
     # A synchronized Hashtable protects individual operations, not enumeration. Materialize the
     # snapshot under its lock, then release it before handlers run and mutate $sync.
@@ -31,25 +31,10 @@ function Reset-WPFCheckBoxes {
         [System.Threading.Monitor]::Exit($sync.SyncRoot)
     }
     foreach ($syncEntry in $syncEntries) {
-        $checkBox = $syncEntry.Value
-        if ($checkBox -is [System.Windows.Controls.CheckBox] -and -not $syncEntry.Key.StartsWith("WPFToggle") -and ($checkboxfilterpattern -eq "**" -or $syncEntry.Key -like $checkboxfilterpattern)) {
-            # Assigning the state a box already has is not free for the hundreds of boxes the
-            # Install tab adds, so only the ones that differ are touched
-            $selected = $selectedSet.Contains($syncEntry.Key)
-            if ($checkBox.IsChecked -ne $selected) {
-                $checkBox.IsChecked = $selected
-            }
+        if ($syncEntry.Value -is [System.Windows.Controls.CheckBox] -and $syncEntry.Name -notlike "WPFToggle*" -and $syncEntry.Name -notlike "WPFServiceGroup*" -and $syncEntry.Name -notlike "WPFDriverGroup*" -and $syncEntry.Name -notlike "WPFTaskGroup*" -and $syncEntry.Name -like $checkboxfilterpattern) {
+            $checkboxName = $syncEntry.Key
+            $sync.$checkboxName.IsChecked = $selectedSet.Contains($checkboxName)
         }
-    }
-
-    # Update Installs tab UI values. These are built with the Install tab, and this runs for
-    # whichever tab is built first: offline starts on Tweaks, so they are not there yet.
-    if ($sync.selectedAppsstackPanel) {
-        $count = $sync.SelectedApps.Count
-        $sync.WPFselectedAppsButton.Content = "Selected Apps: $count"
-        # On every change, remove all entries inside the Popup Menu. This is done, so we can keep the alphabetical order even if elements are selected in a random way
-        $sync.selectedAppsstackPanel.Children.Clear()
-        $sync.selectedApps | Foreach-Object { Add-SelectedAppsMenuItem -name $($sync.configs.applicationsHashtable.$_.Content) -key $_ }
     }
 
     if($doToggles) {
@@ -67,6 +52,24 @@ function Reset-WPFCheckBoxes {
         foreach ($toggle in $toggleEntries) {
             if ($toggle.Key -like "WPFToggle*" -and $toggle.Value -is [System.Windows.Controls.CheckBox] -and $importedToggles.Contains($toggle.Key)) {
                 $sync[$toggle.Key].IsChecked = $true
+                $parentGroup = [string]$sync.configs.tweaks.$($toggle.Key).ParentGroup
+                if ($parentGroup -in @('WPFTaskGroupTelemetry', 'WPFServiceGroupDiagnostics', 'WPFServiceGroupUseless', 'WPFDriverGroupOptional') -and $sync.Form -and
+                    $sync[$toggle.Key].IsEnabled -and $sync[$toggle.Key].Visibility -eq [System.Windows.Visibility]::Visible) {
+                    $pendingName = if ($parentGroup -eq 'WPFTaskGroupTelemetry') {
+                        'PendingTaskSelections'
+                    } else {
+                        'PendingGroupSelections'
+                    }
+                    if ($null -eq $sync[$pendingName]) {
+                        $sync[$pendingName] = [hashtable]::Synchronized(@{})
+                    }
+                    # Import stages Apply; language redraws preserve explicit
+                    # pending restores and must not create phantom operations.
+                    if (-not $sync[$pendingName].ContainsKey($toggle.Key)) {
+                        $actual = Get-WinUtilToggleStatus -ToggleSwitch $toggle.Key
+                        if (-not $actual) { $sync[$pendingName][$toggle.Key] = $true }
+                    }
+                }
             }
             # Toggles not present in the import are intentionally left untouched;
             # their current UI state already reflects the real system state.

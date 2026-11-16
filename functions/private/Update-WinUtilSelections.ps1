@@ -9,21 +9,32 @@ function Update-WinUtilSelections {
     )
 
     $nextSelections = @{
-        selectedApps     = [System.Collections.Generic.List[string]]::new()
         selectedTweaks   = [System.Collections.Generic.List[string]]::new()
         selectedToggles  = [System.Collections.Generic.List[string]]::new()
-        selectedFeatures = [System.Collections.Generic.List[string]]::new()
-        selectedAppx     = [System.Collections.Generic.List[string]]::new()
     }
+
+    # Expand legacy combined selections to their independent current entries.
+    # Older exports represented exactly five tasks with one checkbox. Keep
+    # those same five selections; newly added tasks remain opt-in.
+    $flatJson = @($flatJson | ForEach-Object {
+        if ($_ -eq 'WPFTweaksDisableTelemetryTasks') {
+            @(
+                'WPFToggleTaskCompatibilityAppraiser'
+                'WPFToggleTaskProgramDataUpdater'
+                'WPFToggleTaskConsolidator'
+                'WPFToggleTaskUsbCeip'
+                'WPFToggleTaskKernelCeip'
+            )
+        } elseif ($_ -eq 'WPFTweaksServices') {
+            @('WPFTweaksServicesManual', 'WPFTweaksServicesDisabled')
+        } else { $_ }
+    })
 
     foreach ($cbkey in $flatJson) {
 
         $listName = switch -Regex ($cbkey) {
-            '^WPFInstall' { 'selectedApps' }
             '^WPFTweaks'  { 'selectedTweaks' }
             '^WPFToggle'  { 'selectedToggles' }
-            '^WPFFeature' { 'selectedFeatures' }
-            '^WPFAppx'    { 'selectedAppx' }
         }
 
         if (-not $listName) {
@@ -35,20 +46,11 @@ function Update-WinUtilSelections {
         }
 
         $isKnownSelection = switch ($listName) {
-            'selectedApps' {
-                $sync.configs.applicationsHashtable.ContainsKey($cbkey)
-            }
             'selectedTweaks' {
                 $null -ne $sync.configs.tweaks.PSObject.Properties[$cbkey]
             }
             'selectedToggles' {
                 $null -ne $sync.configs.tweaks.PSObject.Properties[$cbkey]
-            }
-            'selectedFeatures' {
-                $null -ne $sync.configs.feature.PSObject.Properties[$cbkey]
-            }
-            'selectedAppx' {
-                $sync.configs.appxHashtable.ContainsKey($cbkey)
             }
         }
 
@@ -60,7 +62,8 @@ function Update-WinUtilSelections {
             throw "Unknown selection key '$cbkey'."
         }
 
-        # Replacement imports must also behave like checkbox selections, not repeated actions.
+        # A replacement import can contain repeated identifiers. Keep a single
+        # selection so each tweak or toggle runs at most once per Apply.
         if ($nextSelections[$listName] -notcontains $cbkey) {
             $nextSelections[$listName].Add($cbkey)
         }

@@ -65,7 +65,6 @@ function Start-WinUtilUserInterface {
                 [ref]$handled
             )
             $null = $hwnd, $wParam, $lParam
-            if ($msg -eq 0x001A) { Request-WinUtilWindowInsets }
             # Check for the Event WM_SETTINGCHANGE (0x1001A) and validate that Button shows the icon for "Auto" => [char]0xF08C
             if (($msg -eq 0x001A) -and $sync.ThemeButton.Content -eq [char]0xF08C) {
                 $currentTime = [datetime]::Now
@@ -84,8 +83,7 @@ function Start-WinUtilUserInterface {
         Invoke-WinutilThemeChange -theme $sync.preferences.theme
     }
 
-    # Tab content is built when its tab is activated: the default tab just before the window is
-    # shown, the others when they are opened or warmed up.
+    # Tab controls are built after the first paint; explicit navigation builds them on demand.
     $sync.InitializedTabs = @{}
 
     #===========================================================================
@@ -95,17 +93,8 @@ function Start-WinUtilUserInterface {
     Measure-WinUtilStep -Scope "UI" -Name "map named controls" -ScriptBlock {
         $xaml.SelectNodes("//*[@Name]") | ForEach-Object {$sync["$("$($psitem.Name)")"] = $sync["Form"].FindName($psitem.Name)}
     }
-
-    $sync.WindowInsetsPending = $false
-    $sync.WindowInsetsUpdate = [action]{
-        $sync.WindowInsetsPending = $false
-        if (Test-WinUtilUIAlive) { Update-WinUtilWindowInsets }
-    }
-    $sync.Form.Add_Loaded({ Request-WinUtilWindowInsets })
-    $sync.Form.Add_StateChanged({ Request-WinUtilWindowInsets })
-    $sync.Form.Add_SizeChanged({ Request-WinUtilWindowInsets })
-    $sync.Form.Add_LocationChanged({ Request-WinUtilWindowInsets })
-    $sync.Form.Add_DpiChanged({ Request-WinUtilWindowInsets })
+    Initialize-WinUtilLanguage
+    Update-WinUtilLanguageUI
 
     # Built here so it carries this runspace's session state: posted work then runs as ordinary
     # interface code, not a much slower cross-runspace nested pipeline. Invoke-WPFUIThread is the
@@ -176,15 +165,11 @@ function Start-WinUtilUserInterface {
 
         # The pool cannot be torn down under work that is still running: the runspace error that
         # follows is unhandled and ends the process
-        if (($sync.ActiveJob -or $sync.JobQueue.Count -gt 0) -and -not $sync.ForceClose) {
+        if ($sync.ActiveJob -and -not $sync.ForceClose) {
             $closingArgs.Cancel = $true
-            $runningJob = if ($sync.ActiveJob) { $sync.ActiveJob } else { "Queued operations" }
-            Invoke-WinUtilCloseRequest -RunningJob $runningJob -QueuedCount $sync.JobQueue.Count
+            Invoke-WinUtilCloseRequest -RunningJob $sync.ActiveJob
             return
         }
-
-        # Past the prompt the window is closing for good, and nothing queued may start after it
-        $null = Clear-WinUtilJobQueue
 
         # Work that is meant to outlive the window needs the pool it is running on. main.ps1
         # waits for it and shuts the pool down once it is done.
@@ -224,18 +209,15 @@ function Start-WinUtilUserInterface {
         if ($_.KeyboardDevice.Modifiers -eq "Alt") {
             $keyEventArgs = $_
             switch ($_.SystemKey) {
-                "I" { Invoke-WPFButton "WPFTab1BT"; $keyEventArgs.Handled = $true } # Navigate to Install tab and suppress Windows Warning Sound
                 "T" { Invoke-WPFButton "WPFTab2BT"; $keyEventArgs.Handled = $true } # Navigate to Tweaks tab
-                "C" { Invoke-WPFButton "WPFTab3BT"; $keyEventArgs.Handled = $true } # Navigate to Config tab
-                "U" { Invoke-WPFButton "WPFTab4BT"; $keyEventArgs.Handled = $true } # Navigate to Updates tab
-                "W" { Invoke-WPFButton "WPFTab5BT"; $keyEventArgs.Handled = $true } # Navigate to Win11ISO tab
+                "A" { Invoke-WPFButton "WPFAdvancedTabBT"; $keyEventArgs.Handled = $true } # Navigate to Advanced
             }
         }
         # Handle Ctrl key combinations for specific actions
         if ($_.KeyboardDevice.Modifiers -eq "Ctrl") {
             $keyEventArgs = $_
             switch ($_.Key) {
-                "F" { $sync.SearchBar.Focus() } # Focus on the search bar
+                "F" { if ($sync.currentTab -ne 'Tweaks') { Invoke-WPFTab 'WPFTab2BT' }; $sync.SearchBar.Focus() } # Focus on Tweaks search
                 "Q" { $this.Close() } # Close the application
             }
         }
@@ -295,37 +277,21 @@ function Start-WinUtilUserInterface {
         }
 
         if ($PARAM_OFFLINE) {
-            # Show offline banner
             $sync.WPFOfflineBanner.Visibility = [System.Windows.Visibility]::Visible
-
-            # Disable the install tab
-            $sync.WPFTab1BT.IsEnabled = $false
-            $sync.WPFTab1BT.Opacity = 0.5
-            $sync.WPFTab1BT.ToolTip = "Internet connection required for installing applications."
-
-            # The install action buttons are generated with the Install tab, so
-            # Initialize-WinUtilInstallTabControls disables them when that tab is built
-
-            # Show offline indicator
-            Write-Host "Offline mode detected - Install tab disabled." -ForegroundColor Yellow
-
-            # Optionally switch to a different tab if install tab was going to be default
-            Invoke-WPFTab "WPFTab2BT" -Yield  # Switch to Tweaks tab instead
         }
-        else {
-            # Online - ensure install tab is enabled
-            $sync.WPFTab1BT.IsEnabled = $true
-            $sync.WPFTab1BT.Opacity = 1.0
-            $sync.WPFTab1BT.ToolTip = $null
-            Invoke-WPFTab "WPFTab1BT" -Yield  # Default to install tab
+        $sync.Form.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
+            if ($sync.currentTab -eq 'Tweaks' -and -not $sync.InitializedTabs['Tweaks']) {
+                Invoke-WPFTab 'WPFTab2BT' -Yield
+            }
+        }) | Out-Null
+        # "Review in advanced mode" from the guided window marks its plan here.
+        if ($sync.GuidedReviewPlan) {
+            try { Complete-WinUtilGuidedReview } catch { Write-WinUtilErrorRecord -ErrorRecord $_ -Component 'Guided' -Context 'Review guided plan' }
         }
-
         $sync["Form"].Focus()
-        $sync["Form"].Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{ Initialize-WinUtilRunspacePool | Out-Null }) | Out-Null
         $sync["Form"].Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
             Set-WinUtilTaskbaritem -overlay "logo"
         }) | Out-Null
-        $sync["Form"].Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{ Start-WinUtilTabWarmup }) | Out-Null
     })
 
     # The SearchBarTimer is used to delay the search operation until the user has stopped typing for a short period
@@ -337,17 +303,7 @@ function Start-WinUtilUserInterface {
 
     $searchBarTimer.add_Tick({
         $searchBarTimer.Stop()
-        switch ($sync.currentTab) {
-            "Install" {
-                Find-AppsByNameOrDescription -SearchString $sync.SearchBar.Text -Categories $sync.SelectedAppCategories.ToArray()
-            }
-            "Tweaks" {
-                Find-TweaksByNameOrDescription -SearchString $sync.SearchBar.Text
-            }
-            "AppX" {
-                Find-TweaksByNameOrDescription -SearchString $sync.SearchBar.Text
-            }
-        }
+        Find-TweaksByNameOrDescription -SearchString $sync.SearchBar.Text
     })
     $sync["SearchBar"].Add_TextChanged({
         if ($sync.SearchBar.Text -ne "") {
@@ -364,26 +320,6 @@ function Start-WinUtilUserInterface {
         $searchBarTimer.Start()
     })
 
-    # Category filter chips. The chip carries its category in Tag, so one handler covers all of them.
-    $sync.AppCategoryChips = @(
-        @{ Name = "WPFSearchChipAll";             Category = "" }
-        @{ Name = "WPFSearchChipBrowsers";        Category = "Browsers" }
-        @{ Name = "WPFSearchChipCommunications";  Category = "Communications" }
-        @{ Name = "WPFSearchChipDevelopment";     Category = "Development" }
-        @{ Name = "WPFSearchChipDocument";        Category = "Document" }
-        @{ Name = "WPFSearchChipGames";           Category = "Games" }
-        @{ Name = "WPFSearchChipMicrosoftTools";  Category = "Microsoft Tools" }
-        @{ Name = "WPFSearchChipMultimediaTools"; Category = "Multimedia Tools" }
-        @{ Name = "WPFSearchChipProTools";        Category = "Pro Tools" }
-        @{ Name = "WPFSearchChipSelfhostedTools"; Category = "Selfhosted Tools" }
-        @{ Name = "WPFSearchChipUtilities";       Category = "Utilities" }
-    )
-    $sync.SelectedAppCategories = [System.Collections.Generic.List[string]]::new()
-
-    foreach ($appCategoryChip in $sync.AppCategoryChips) {
-        $sync[$appCategoryChip.Name].Tag = $appCategoryChip.Category
-        $sync[$appCategoryChip.Name].Add_Click({ Invoke-WinUtilAppCategoryChip -Chip $this })
-    }
 
     $sync["Form"].Add_Loaded({
         param($e)
@@ -395,7 +331,9 @@ function Start-WinUtilUserInterface {
 
     Measure-WinUtilStep -Scope "UI" -Name "build nav logo" -ScriptBlock {
         $NavLogoPanel = $sync["Form"].FindName("NavLogoPanel")
-        $NavLogoPanel.Children.Add((Invoke-WinUtilAssets -Type "logo" -Size 25)) | Out-Null
+        $logo = Invoke-WinUtilAssets -Type "logo" -Size 25
+        $NavLogoPanel.Children.Add($logo) | Out-Null
+        $sync.Form.Icon = $logo.Source
     }
 
     $sync["Form"].Add_Activated({
@@ -418,18 +356,13 @@ function Start-WinUtilUserInterface {
         Invoke-WinutilThemeChange -theme "Light"
     })
 
-    # A popup that closes on outside clicks also closes on the click that would toggle it, which
-    # would then reopen it, so a click straight after a close is that same click
-    $sync.JobQueuePopupClosedAt = [DateTime]::MinValue
-    $sync["JobQueuePopup"].Add_Closed({ $sync.JobQueuePopupClosedAt = [DateTime]::UtcNow })
-    $sync["JobQueuePopup"].Add_Opened({ Update-WinUtilJobQueueUI })
-    $sync["JobQueueButton"].Add_Click({
-        if (([DateTime]::UtcNow - $sync.JobQueuePopupClosedAt).TotalMilliseconds -lt 300) { return }
-        Invoke-WPFPopup -PopupActionTable @{ "Settings" = "Hide"; "Theme" = "Hide"; "FontScaling" = "Hide"; "JobQueue" = "Show" }
-    })
-
     $sync["SettingsButton"].Add_Click({
         Invoke-WPFPopup -PopupActionTable @{ "Settings" = "Toggle"; "Theme" = "Hide"; "FontScaling" = "Hide" }
+    })
+    $sync["WPFLanguageSelector"].Add_SelectionChanged({
+        if ($sync.LanguageSelectorChanging -or $null -eq $sync.WPFLanguageSelector.SelectedItem) { return }
+        $chosenLanguage = [string]$sync.WPFLanguageSelector.SelectedItem.Tag
+        Set-WinUtilLanguage -Language $chosenLanguage
     })
     $sync["ImportMenuItem"].Add_Click({
         Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
@@ -439,42 +372,23 @@ function Start-WinUtilUserInterface {
         Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
         Invoke-WPFImpex -type "export"
     })
-    $sync["ExportEnvironmentReportMenuItem"].Add_Click({
+
+    $sync["GuidedModeMenuItem"].Add_Click({
         Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
-        Invoke-WPFExportEnvironmentReport
+        try {
+            $null = Show-WinUtilGuidedWindow -Start 'Resume' -Owner $sync.Form
+            if ($sync.GuidedReviewPlan) { Complete-WinUtilGuidedReview }
+        } catch {
+            Write-WinUtilErrorRecord -ErrorRecord $_ -Component 'Guided' -Context 'Open guided mode'
+        }
     })
+
     $sync["AboutMenuItem"].Add_Click({
         Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
 
-        $authorInfo = @"
-Author   : <a href="https://github.com/ChrisTitusTech">@ChrisTitusTech</a>
-UI       : <a href="https://github.com/MyDrift-user">@MyDrift-user</a>, <a href="https://github.com/Marterich">@Marterich</a>
-Runspace : <a href="https://github.com/DeveloperDurp">@DeveloperDurp</a>, <a href="https://github.com/Marterich">@Marterich</a>
-GitHub   : <a href="https://github.com/ChrisTitusTech/winutil">ChrisTitusTech/winutil</a>
-Version  : <a href="https://github.com/ChrisTitusTech/winutil/releases/tag/$($sync.version)">$($sync.version)</a>
-"@
-        Show-CustomDialog -Title "About" -Message $authorInfo
-    })
-    $sync["DocumentationMenuItem"].Add_Click({
-        Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
-        Start-Process "https://winutil.christitus.com/"
-    })
-    $sync["SponsorMenuItem"].Add_Click({
-        Invoke-WPFPopup -Action "Hide" -Popups @("Settings")
-
-        $authorInfo = @"
-<a href="https://github.com/sponsors/ChrisTitusTech">Current sponsors for ChrisTitusTech:</a>
-"@
-        $authorInfo += "`n"
-        try {
-            $sponsors = Invoke-WinUtilSponsors
-            foreach ($sponsor in $sponsors) {
-                $authorInfo += "<a href=`"https://github.com/sponsors/ChrisTitusTech`">$sponsor</a>`n"
-            }
-        } catch {
-            $authorInfo += "An error occurred while fetching or processing the sponsors: $_`n"
-        }
-        Show-CustomDialog -Title "Sponsors" -Message $authorInfo -EnableScroll $true
+        $title = if ($sync.Language -eq 'es') { 'Acerca de APBOptimizer' } else { 'About APBOptimizer' }
+        $authorInfo = Get-WinUtilAboutInfo -Language $sync.Language -Version $sync.version
+        Show-CustomDialog -Title $title -Message $authorInfo -HeaderText 'APBOptimizer' -Width 640 -Height 490 -EnableScroll $true
     })
 
     # Font Scaling Event Handlers
@@ -499,52 +413,6 @@ Version  : <a href="https://github.com/ChrisTitusTech/winutil/releases/tag/$($sy
         Invoke-WPFPopup -Action "Hide" -Popups @("FontScaling")
     })
 
-    # Win11ISO Tab button handlers
-    $sync["WPFWin11ISOBrowseButton"].Add_Click({
-        Invoke-WinUtilISOBrowse
-    })
-
-    $sync["WPFWin11ISODownloadLink"].Add_Click({
-        Start-Process "https://www.microsoft.com/software-download/windows11"
-    })
-
-    $sync["WPFWin11ISOMountButton"].Add_Click({
-        Invoke-WinUtilISOMountAndVerify
-    })
-
-    $sync["WPFWin11ISOModifyButton"].Add_Click({
-        Invoke-WinUtilISOModify
-    })
-
-    $sync["WPFWin11ISOChooseISOButton"].Add_Click({
-        $sync["WPFWin11ISOOptionUSB"].Visibility = "Collapsed"
-        Invoke-WinUtilISOExport
-    })
-
-    $sync["WPFWin11ISOChooseUSBButton"].Add_Click({
-        $sync["WPFWin11ISOOptionUSB"].Visibility = "Visible"
-        Invoke-WinUtilISORefreshUSBDrives
-    })
-
-    $sync["WPFWin11ISORefreshUSBButton"].Add_Click({
-        Invoke-WinUtilISORefreshUSBDrives
-    })
-
-    $sync["WPFWin11ISOWriteUSBButton"].Add_Click({
-        Invoke-WinUtilISOWriteUSB
-    })
-
-    $sync["WPFWin11ISOCleanResetButton"].Add_Click({
-        Invoke-WinUtilISOCleanAndReset
-    })
-
-    $sync["WPFWin11ISOBackButton"].Add_Click({
-        $sync["WPFWin11ISOSelectSection"].IsSelected = $true
-    })
-
-    $sync["WPFWin11ISOForwardButton"].Add_Click({
-        $sync["WPFWin11ISOModifySection"].IsSelected = $true
-    })
 
     $buildClock.Stop()
     Write-WinUtilLog -Level "DEBUG" -Component "UI" -Message "Interface built in $($buildClock.ElapsedMilliseconds) ms, showing the window."
@@ -557,18 +425,17 @@ Version  : <a href="https://github.com/ChrisTitusTech/winutil/releases/tag/$($sy
         Write-WinUtilLog -Level "DEBUG" -Component "UI" -Message "timing: interface ready for input $sinceStart ms after start."
     }) | Out-Null
 
-    # The default tab is built before the window is shown, in one pass nothing is waiting on, so it
-    # opens with the app list in place instead of filling in. Offline starts on another tab.
-    if (-not $PARAM_OFFLINE) {
-        $sync.BuildingBeforeShow = $true
-        try {
-            Measure-WinUtilStep -Scope "UI" -Name "build default tab before show" -ScriptBlock { Invoke-WPFTab "WPFTab1BT" }
-        } finally {
-            $sync.BuildingBeforeShow = $false
-        }
+    # The guided window is a separate launcher. The full interface opens only when the user
+    # picks advanced mode there.
+    try {
+        $openMain = Show-WinUtilGuidedWindow -Start 'Chooser'
+    } catch {
+        Write-WinUtilErrorRecord -ErrorRecord $_ -Component 'Guided' -Context 'Show guided window'
+        $openMain = $true
     }
-
-    $sync["Form"].ShowDialog() | Out-Null
+    if ($openMain) {
+        $sync["Form"].ShowDialog() | Out-Null
+    }
 
     # ShowDialog returns once the window is gone; stop the dispatcher so this runspace can close
     [System.Windows.Threading.Dispatcher]::CurrentDispatcher.InvokeShutdown()

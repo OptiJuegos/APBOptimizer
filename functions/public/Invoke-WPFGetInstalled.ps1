@@ -1,50 +1,17 @@
-function Invoke-WPFGetInstalled {
-    <#
-    .SYNOPSIS
-        Detects what is already installed or applied and ticks the matching boxes
+﻿function Invoke-WPFGetInstalled {
+    param([string]$CheckBox)
 
-    .PARAMETER checkbox
-        Indicates whether to check for installed 'winget' programs or applied 'tweaks'
+    if ($CheckBox -ne 'tweaks') { return }
 
-    #>
-    param($checkbox)
-
-    if (($sync.ChocoRadioButton.IsChecked -eq $false) -and ((Test-WinUtilPackageManager -winget) -eq "not-installed") -and $checkbox -eq "winget") {
-        return
-    }
-
-    Start-WinUtilJob -Name "Detect installed" -Description "Checking what is already installed" -Parameters @{
-        Checkbox = $checkbox
-        ManagerPreference = $sync.preferences.packagemanager
-    } -ScriptBlock {
-        param($Checkbox, $ManagerPreference)
-
-        Step-WinUtilJob -Status "Checking what is already installed" -State "Indeterminate"
-
-        $found = @()
-        if ($Checkbox -eq "winget") {
-            $source = if ($ManagerPreference -eq "Choco") { "choco" } else { $Checkbox }
-            $found = @(Invoke-WinUtilCurrentSystem -CheckBox $source)
-        } elseif ($Checkbox -eq "tweaks") {
-            $found = @(Invoke-WinUtilCurrentSystem -CheckBox $Checkbox)
-        }
-
-        Write-WinUtilLog -Component "Install" -Message "Detected $($found.Count) existing item(s) for $Checkbox."
-
-        # Ticking boxes touches the controls, so it happens on the interface thread
-        Invoke-WPFUIThread -Parameters @{ Checkbox = $Checkbox; Found = $found } -ScriptBlock {
-            param($Checkbox, $Found)
-
-            if ($Checkbox -eq "winget") {
-                foreach ($name in $Found) {
-                    if (-not $sync.selectedApps.Contains($name)) {
-                        $sync.selectedApps.Add($name)
-                    }
-                }
-                Reset-WPFCheckBoxes -checkboxfilterpattern "WPFInstall*"
-            } else {
-                foreach ($name in $Found) {
-                    $sync.$name.ischecked = $true
+    Start-WinUtilJob -Name 'Detect applied tweaks' -Description 'Checking applied tweaks' -ScriptBlock {
+        Step-WinUtilJob -Status 'Checking applied tweaks' -State 'Indeterminate'
+        $found = @(Invoke-WinUtilCurrentSystem -CheckBox 'tweaks')
+        Write-WinUtilLog -Component 'Tweaks' -Message "Detected $($found.Count) applied tweak(s)."
+        Invoke-WPFUIThread -Parameters @{ Found = $found } -ScriptBlock {
+            param($Found)
+            foreach ($name in $Found) {
+                if ($null -ne $sync.$name) {
+                    $sync.$name.IsChecked = $true
                 }
             }
         }

@@ -2,10 +2,6 @@ function Save-WinUtilFile {
     <#
     .SYNOPSIS
         Downloads a file and reports transfer progress.
-
-    .PARAMETER ProgressCallback
-        Called with the percentage completed and the total size in bytes. The size is -1 when
-        the server sends no Content-Length, in which case only the final 100% call is made.
     #>
     param(
         [Parameter(Mandatory)]
@@ -39,14 +35,14 @@ function Save-WinUtilFile {
             if ($totalBytes -gt 0) {
                 $percent = [Math]::Min(100, [int](($downloadedBytes / $totalBytes) * 100))
                 if ($percent -ne $lastPercent) {
-                    & $ProgressCallback $percent $totalBytes
+                    & $ProgressCallback $percent
                     $lastPercent = $percent
                 }
             }
         }
 
         if ($lastPercent -ne 100) {
-            & $ProgressCallback 100 $totalBytes
+            & $ProgressCallback 100
         }
     }
     finally {

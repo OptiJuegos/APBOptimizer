@@ -26,12 +26,15 @@ function Invoke-WinUtilAutoRun {
         [int]$StopTimeoutSeconds = 30
     )
 
+    # Bulk AppX removal requires an explicit UI confirmation. A saved/imported
+    # configuration must not uninstall apps silently in a headless run.
+    if (@($sync.selectedTweaks) -contains 'WPFTweaksDeBloat') {
+        throw 'Bulk Microsoft Store app removal requires interactive confirmation in APBOptimizer. Remove WPFTweaksDeBloat from the headless configuration.'
+    }
+
     $steps = @(
-        [pscustomobject]@{ Name = "Tweaks";          Count = @($sync.selectedTweaks).Count;   Action = { Invoke-WPFtweaksbutton } }
-        [pscustomobject]@{ Name = "Toggles";         Count = @($sync.selectedToggles).Count;  Action = { Invoke-WPFToggleSelections } }
-        [pscustomobject]@{ Name = "Features";        Count = @($sync.selectedFeatures).Count; Action = { Invoke-WPFFeatureInstall } }
-        [pscustomobject]@{ Name = "Applications";    Count = @($sync.selectedApps).Count;     Action = { Invoke-WPFInstall } }
-        [pscustomobject]@{ Name = "AppX removal";    Count = @($sync.selectedAppx).Count;     Action = { Invoke-WPFAppxRemoval } }
+        [pscustomobject]@{ Name = 'Tweaks';  Count = @($sync.selectedTweaks).Count;  Action = { Invoke-WPFtweaksbutton } }
+        [pscustomobject]@{ Name = 'Toggles'; Count = @($sync.selectedToggles).Count; Action = { Invoke-WPFToggleSelections } }
     )
 
     $planned = @($steps | Where-Object { $_.Count -gt 0 })

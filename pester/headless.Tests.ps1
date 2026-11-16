@@ -1,4 +1,4 @@
-#===========================================================================
+﻿#===========================================================================
 # Tests - Headless runs never need a window
 
 BeforeAll {
@@ -31,8 +31,6 @@ BeforeAll {
     function Write-WinUtilErrorRecord { param($ErrorRecord, $Component, $Context) }
     function Invoke-WPFtweaksbutton { }
     function Invoke-WPFToggleSelections { }
-    function Invoke-WPFFeatureInstall { }
-    function Invoke-WPFInstall { }
     function Invoke-WPFAppxRemoval { }
 }
 
@@ -173,8 +171,8 @@ exit 23
     }
 
     It "cleans up even when the run throws" {
-        # Without a finally a failed run leaves the worker pool open and the log file held
-        $script:mainScript | Should -Match '\} finally \{[\s\S]*Close-WinUtilRunspacePool[\s\S]*Close-WinUtilLog'
+        # Without a finally a failed run leaves the worker pool open and the transcript running
+        $script:mainScript | Should -Match '\} finally \{[\s\S]*Close-WinUtilRunspacePool[\s\S]*Stop-Transcript'
     }
 
     It "names the presets that exist when given one that does not" {
@@ -212,7 +210,7 @@ Describe "Invoke-WinUtilAutoRun" {
         $global:sync = [hashtable]::Synchronized(@{})
         $sync.selectedTweaks = [System.Collections.Generic.List[string]]::new()
         $sync.selectedToggles = [System.Collections.Generic.List[string]]::new()
-        $sync.selectedApps = [System.Collections.Generic.List[string]]::new()
+        $sync.selectedToggles = [System.Collections.Generic.List[string]]::new()
         $sync.selectedFeatures = [System.Collections.Generic.List[string]]::new()
         $sync.selectedAppx = [System.Collections.Generic.List[string]]::new()
         $sync.LoggedErrors = [System.Collections.ArrayList]::Synchronized([System.Collections.ArrayList]::new())
@@ -241,21 +239,21 @@ Describe "Invoke-WinUtilAutoRun" {
     }
 
     It "runs only the steps that have something selected" {
-        $sync.selectedApps.Add("WPFInstall7zip")
-        Mock Invoke-WPFInstall { }
+        $sync.selectedToggles.Add("WPFToggleDarkMode")
+        Mock Invoke-WPFToggleSelections { }
         Mock Invoke-WPFtweaksbutton { }
 
         $summary = Invoke-WinUtilAutoRun
 
         @($summary.Steps).Count | Should -Be 1
-        $summary.Steps[0].Name | Should -Be "Applications"
-        Should -Invoke -CommandName Invoke-WPFtweaksbutton -Times 0 -Exactly
+        $summary.Steps[0].Name | Should -Be "Toggles"
+        Should -Invoke -CommandName Invoke-WPFToggleSelections -Times 1 -Exactly
     }
 
     It "gives up on a step that never finishes instead of hanging for good" {
-        $sync.selectedApps.Add("WPFInstall7zip")
+        $sync.selectedToggles.Add("WPFToggleDarkMode")
         # a job that sets the flag and never clears it
-        Mock Invoke-WPFInstall { $sync.ActiveJob = "Install" }
+        Mock Invoke-WPFToggleSelections { $sync.ActiveJob = "Install" }
 
         $summary = Invoke-WinUtilAutoRun -StepTimeoutSeconds 1
 
@@ -266,10 +264,10 @@ Describe "Invoke-WinUtilAutoRun" {
 
     It "abandons the remaining steps when a timed out worker will not stop" {
         $sync.selectedTweaks.Add("WPFTweaksAH")
-        $sync.selectedApps.Add("WPFInstall7zip")
+        $sync.selectedToggles.Add("WPFToggleDarkMode")
         # the first step times out, and its worker is still running afterwards
         Mock Invoke-WPFtweaksbutton { $sync.ActiveJob = "Tweaks" }
-        Mock Invoke-WPFInstall { }
+        Mock Invoke-WPFToggleSelections { }
         Mock Stop-WinUtilActiveWork { }
         Mock Test-WinUtilActiveWorkRunning { return $true }
 
@@ -277,13 +275,13 @@ Describe "Invoke-WinUtilAutoRun" {
 
         $summary.TimedOut | Should -Be 1
         # the later step must not run beside work that is still changing the machine
-        Should -Invoke -CommandName Invoke-WPFInstall -Times 0 -Exactly
+        Should -Invoke -CommandName Invoke-WPFToggleSelections -Times 0 -Exactly
         Should -Invoke -CommandName Stop-WinUtilActiveWork -Times 1 -Exactly
     }
 
     It "counts a step's errors against the run" {
-        $sync.selectedApps.Add("WPFInstall7zip")
-        Mock Invoke-WPFInstall { $null = $sync.LoggedErrors.Add("boom") }
+        $sync.selectedToggles.Add("WPFToggleDarkMode")
+        Mock Invoke-WPFToggleSelections { $null = $sync.LoggedErrors.Add("boom") }
 
         $summary = Invoke-WinUtilAutoRun
 
@@ -292,8 +290,8 @@ Describe "Invoke-WinUtilAutoRun" {
     }
 
     It "reports warnings produced by a completed job" {
-        $sync.selectedApps.Add("WPFInstall7zip")
-        Mock Invoke-WPFInstall {
+        $sync.selectedToggles.Add("WPFToggleDarkMode")
+        Mock Invoke-WPFToggleSelections {
             $sync.LastJobResult = [pscustomobject]@{ Errors = 0; Warnings = 1 }
         }
 
@@ -306,13 +304,13 @@ Describe "Invoke-WinUtilAutoRun" {
 
     It "keeps going after a step throws rather than abandoning the run" {
         $sync.selectedTweaks.Add("WPFTweaksDiskCleanup")
-        $sync.selectedApps.Add("WPFInstall7zip")
+        $sync.selectedToggles.Add("WPFToggleDarkMode")
         Mock Invoke-WPFtweaksbutton { throw "tweaks blew up" }
-        Mock Invoke-WPFInstall { }
+        Mock Invoke-WPFToggleSelections { }
 
         $summary = Invoke-WinUtilAutoRun
 
-        Should -Invoke -CommandName Invoke-WPFInstall -Times 1 -Exactly
+        Should -Invoke -CommandName Invoke-WPFToggleSelections -Times 1 -Exactly
         @($summary.Steps).Count | Should -Be 2
     }
 }
@@ -358,7 +356,7 @@ Describe "Write-WinUtilAutoRunSummary" {
 
     It "reports warnings without turning an expected package skip into failure" {
         $summary = [pscustomobject]@{
-            Steps = @([pscustomobject]@{ Name = "Applications"; Items = 1; Seconds = 1; Errors = 0; Warnings = 1; TimedOut = $false })
+            Steps = @([pscustomobject]@{ Name = "Toggles"; Items = 1; Seconds = 1; Errors = 0; Warnings = 1; TimedOut = $false })
             Failed = 0; TimedOut = 0; Errors = 0; Warnings = 1
         }
 
@@ -370,13 +368,13 @@ Describe "Write-WinUtilAutoRunSummary" {
 Describe "Update-WinUtilSelections" {
     BeforeEach {
         $global:sync = [hashtable]::Synchronized(@{})
-        foreach ($list in @("selectedApps","selectedTweaks","selectedToggles","selectedFeatures","selectedAppx")) {
+        foreach ($list in @("selectedToggles","selectedTweaks","selectedToggles","selectedFeatures","selectedAppx")) {
             $sync.$list = [System.Collections.Generic.List[string]]::new()
         }
         # The selection sorter now checks each key against the real catalogue before taking it,
         # so the fixture has to carry the configs it reads
         $sync.configs = @{
-            applicationsHashtable = @{ "WPFInstall7zip" = @{} }
+            applicationsHashtable = @{ "WPFToggleDarkMode" = @{} }
             appxHashtable         = @{ "WPFAppxBing" = @{} }
             tweaks                = [pscustomobject]@{ "WPFTweaksDiskCleanup" = @{}; "WPFToggleDarkMode" = @{} }
             feature               = [pscustomobject]@{ "WPFFeaturesdotnet" = @{} }
@@ -384,15 +382,7 @@ Describe "Update-WinUtilSelections" {
         Mock Write-WinUtilLog { }
     }
 
-    It "sorts each prefix into its own list" {
-        Update-WinUtilSelections -flatJson @("WPFInstall7zip","WPFTweaksDiskCleanup","WPFToggleDarkMode","WPFFeaturesdotnet","WPFAppxBing")
 
-        $sync.selectedApps | Should -Contain "WPFInstall7zip"
-        $sync.selectedTweaks | Should -Contain "WPFTweaksDiskCleanup"
-        $sync.selectedToggles | Should -Contain "WPFToggleDarkMode"
-        $sync.selectedFeatures | Should -Contain "WPFFeaturesdotnet"
-        $sync.selectedAppx | Should -Contain "WPFAppxBing"
-    }
 
     It "hands back an unrecognised entry rather than throwing, which is what the headless run relies on" {
         # The headless path passes SkipUnknown so a retired entry names itself and the run goes
@@ -404,9 +394,9 @@ Describe "Update-WinUtilSelections" {
     }
 
     It "does not select the same entry twice when a preset and a config both list it" {
-        Update-WinUtilSelections -flatJson @("WPFInstall7zip")
-        Update-WinUtilSelections -flatJson @("WPFInstall7zip")
+        Update-WinUtilSelections -flatJson @("WPFToggleDarkMode")
+        Update-WinUtilSelections -flatJson @("WPFToggleDarkMode")
 
-        @($sync.selectedApps).Count | Should -Be 1
+        @($sync.selectedToggles).Count | Should -Be 1
     }
 }

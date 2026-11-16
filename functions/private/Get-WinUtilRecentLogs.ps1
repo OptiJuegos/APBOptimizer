@@ -1,7 +1,7 @@
 function Get-WinUtilRecentLogs {
     <#
     .SYNOPSIS
-        Concatenates WinUtil session logs from the last N days into a single text blob.
+        Concatenates APBOptimizer and legacy WinUtil session logs from the last N days.
 
     .PARAMETER Days
         How many days back to include. Defaults to 7, matching what the support forum/server
@@ -27,8 +27,8 @@ function Get-WinUtilRecentLogs {
     }
 
     $cutoff = (Get-Date).AddDays(-$Days)
-    $logFiles = Get-ChildItem -LiteralPath $LogDirectory -Filter "winutil_*.log" -File -ErrorAction Stop |
-        Where-Object { $_.LastWriteTime -ge $cutoff } |
+    $logFiles = Get-ChildItem -LiteralPath $LogDirectory -Filter "*.log" -File -ErrorAction Stop |
+        Where-Object { ($_.Name -like 'APBOptimizer_*.log' -or $_.Name -like 'winutil_*.log') -and $_.LastWriteTime -ge $cutoff } |
         Sort-Object LastWriteTime
 
     $sections = foreach ($logFile in $logFiles) {

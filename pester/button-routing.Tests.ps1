@@ -1,89 +1,33 @@
-#===========================================================================
-# Tests - Work button routing
-
 BeforeAll {
-    $script:repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-    . (Join-Path $script:repoRoot "functions\public\Invoke-WPFUpdatesdisable.ps1")
-    . (Join-Path $script:repoRoot "functions\public\Invoke-WPFButton.ps1")
-
-    function Start-WinUtilJob {
-        param([string]$Name, [scriptblock]$ScriptBlock, [hashtable]$Parameters)
+    $script:repoRoot = Split-Path $PSScriptRoot -Parent
+    foreach ($file in @('Invoke-WPFButton', 'Invoke-WPFUltimatePerformance', 'Invoke-WPFOOSU')) {
+        . (Join-Path $script:repoRoot "functions/public/$file.ps1")
     }
-    function Step-WinUtilJob {
-        param([string]$Status, [int]$Percent, [string]$State, [string]$Overlay, [switch]$Hide)
-    }
-    function Write-WinUtilLog {
-        param($Message, $Level, $Component)
-    }
-    function Write-WinUtilErrorRecord {
-        param($ErrorRecord, $Component, $Context)
-    }
-    function Invoke-WPFFeatureInstall { }
+    . (Join-Path $script:repoRoot 'functions/private/Start-WinUtilJob.ps1')
+    . (Join-Path $script:repoRoot 'functions/private/Step-WinUtilJob.ps1')
+    . (Join-Path $script:repoRoot 'functions/private/Write-WinUtilErrorRecord.ps1')
 }
-
-Describe "Work button preflight" {
+Describe 'Retained tweak action buttons' {
     BeforeEach {
-        $script:sync = [Hashtable]::Synchronized(@{
-            ActiveJob = $null
-            configs = @{
-                feature = @{
-                    WPFFeatureInstall = [pscustomobject]@{
-                        Content = "Install Features"
-                        function = "Invoke-WPFFeatureInstall"
-                    }
-                }
-            }
-            WPFUpdatesdisable = [pscustomobject]@{ Content = "Disable Updates" }
-        })
-        $script:capturedJob = $null
-
+        $script:sync = [hashtable]::Synchronized(@{})
         Mock Step-WinUtilJob { }
-        Mock Write-WinUtilLog { }
-        Mock Write-WinUtilErrorRecord { }
-        Mock Invoke-WPFFeatureInstall { }
-        Mock Invoke-WPFUpdatesdisable { }
-        Mock Confirm-WPFUpdatesdisable { $true }
-        Mock Start-WinUtilJob {
-            $script:capturedJob = [pscustomobject]@{
-                Name = $Name
-                ScriptBlock = $ScriptBlock
-                Parameters = $Parameters
-            }
-        }
+        Mock Write-WinUtilErrorRecord { throw $ErrorRecord }
+        Mock Invoke-WPFUltimatePerformance { }
+        Mock Invoke-WPFOOSU { }
+        Mock Start-WinUtilJob { & $ScriptBlock }
+        Mock Start-Process { }
     }
-
-    AfterEach {
-        Remove-Variable -Name sync -Scope Script -ErrorAction SilentlyContinue
-        Remove-Variable -Name capturedJob -Scope Script -ErrorAction SilentlyContinue
+    It 'queues adding the Ultimate Performance plan' {
+        Invoke-WPFButton WPFAddUltPerf
+        Should -Invoke Start-WinUtilJob -Times 1 -Exactly
+        Should -Invoke Invoke-WPFUltimatePerformance -Times 1 -Exactly -ParameterFilter { $Enable }
     }
-
-    It "lets feature installation validate its selection before starting a job" {
-        Invoke-WPFButton -Button "WPFFeatureInstall"
-
-        Should -Invoke Invoke-WPFFeatureInstall -Times 1 -Exactly
-        Should -Invoke Start-WinUtilJob -Times 0 -Exactly
+    It 'queues restoring the default power plans' {
+        Invoke-WPFButton WPFRemoveUltPerf
+        Should -Invoke Invoke-WPFUltimatePerformance -Times 1 -Exactly -ParameterFilter { -not $Enable }
     }
-
-    It "does not start the update-disable job when confirmation is declined" {
-        Mock Confirm-WPFUpdatesdisable { $false }
-
-        Invoke-WPFButton -Button "WPFUpdatesdisable"
-
-        Should -Invoke Confirm-WPFUpdatesdisable -Times 1 -Exactly
-        Should -Invoke Start-WinUtilJob -Times 0 -Exactly
-    }
-
-    It "passes completed confirmation into the update-disable job" {
-        Invoke-WPFButton -Button "WPFUpdatesdisable"
-
-        Should -Invoke Start-WinUtilJob -Times 1 -Exactly -ParameterFilter {
-            $Name -eq "Disable Updates" -and $Parameters.UpdatesDisableConfirmed -eq $true
-        }
-
-        $jobParameters = $script:capturedJob.Parameters
-        & $script:capturedJob.ScriptBlock @jobParameters
-
-        Should -Invoke Invoke-WPFUpdatesdisable -Times 1 -Exactly -ParameterFilter { $Confirmed }
-        Should -Invoke Confirm-WPFUpdatesdisable -Times 1 -Exactly
+    It 'does not dispatch the removed OOSU button' {
+        Invoke-WPFButton WPFOOSUbutton
+        Should -Invoke Invoke-WPFOOSU -Times 0 -Exactly
     }
 }

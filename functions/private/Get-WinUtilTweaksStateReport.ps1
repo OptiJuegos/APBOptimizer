@@ -30,7 +30,7 @@ function Get-WinUtilTweaksStateReport {
             $entry = $property.Value
             $fieldName = $categoryFieldNames[[string]$entry.category]
 
-            # Buttons embedded in the tweaks panel (e.g. the OOSU/Ultimate Performance launchers)
+            # Buttons embedded in the tweaks panel (e.g. Ultimate Performance launchers)
             # are actions, not stateful tweaks, so they're outside this report's scope entirely.
             if (-not $fieldName -or $entry.Type -eq "Button") {
                 continue

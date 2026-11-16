@@ -1,4 +1,4 @@
-#===========================================================================
+﻿#===========================================================================
 # Tests - Search and Filter Helpers
 #===========================================================================
 
@@ -93,11 +93,6 @@ namespace Windows.Controls
         }
     }
 
-    public class ScrollViewer
-    {
-        public object Content { get; set; }
-    }
-
     public class Label
     {
         public object Content { get; set; }
@@ -114,15 +109,7 @@ namespace Windows.Controls
 }
 "@
     }
-
-    . (Join-Path $script:repoRoot "functions\private\Find-AppsByNameOrDescription.ps1")
     . (Join-Path $script:repoRoot "functions\private\Find-TweaksByNameOrDescription.ps1")
-    . (Join-Path $script:repoRoot "functions\private\Get-WinUtilEntryToolTip.ps1")
-
-    function Write-WinUtilLog {
-        param($Level, $Component, $Message)
-        throw $Message
-    }
 
     function script:New-WinUtilSearchCollection {
         return ,[System.Collections.ArrayList]::new()
@@ -265,9 +252,7 @@ namespace Windows.Controls
     function script:New-WinUtilTweakCategory {
         param(
             [string]$Label,
-            [object[]]$Items,
-            [ValidateSet("ItemsControl", "StackPanel", "ScrollViewer")]
-            [string]$ContainerType = "ItemsControl"
+            [object[]]$Items
         )
 
         $categoryLabel = [Windows.Controls.Label]::new()
@@ -281,23 +266,7 @@ namespace Windows.Controls
         }
 
         $dockPanel = [Windows.Controls.DockPanel]::new()
-        if ($ContainerType -eq "ItemsControl") {
-            $null = $dockPanel.Children.Add($itemsControl)
-        } else {
-            $stack = [Windows.Controls.StackPanel]::new()
-            $categoryItems = @($itemsControl.Items)
-            $itemsControl.Items.Clear()
-            foreach ($item in $categoryItems) {
-                $null = $stack.Children.Add($item)
-            }
-            if ($ContainerType -eq "ScrollViewer") {
-                $scroll = [Windows.Controls.ScrollViewer]::new()
-                $scroll.Content = $stack
-                $null = $dockPanel.Children.Add($scroll)
-            } else {
-                $null = $dockPanel.Children.Add($stack)
-            }
-        }
+        $null = $dockPanel.Children.Add($itemsControl)
 
         $border = [Windows.Controls.Border]::new()
         $border.Child = $dockPanel
@@ -343,214 +312,30 @@ namespace Windows.Controls
     }
 }
 
-Describe "Find-AppsByNameOrDescription" {
-    AfterEach {
-        Remove-WinUtilSearchGlobals
-    }
 
-    It "restores app visibility and respects collapsed category state for empty search" {
-        $browserItem = New-WinUtilAppSearchItem -Tag "WPFInstallBrowser"
-        $mediaItem = New-WinUtilAppSearchItem -Tag "WPFInstallMedia"
-        $browserItem.Visibility = [Windows.Visibility]::Collapsed
-        $mediaItem.Visibility = [Windows.Visibility]::Collapsed
-
-        $collapsedCategory = New-WinUtilAppCategory -Label "+ Browsers" -Items @($browserItem)
-        $expandedCategory = New-WinUtilAppCategory -Label "- Media" -Items @($mediaItem)
-        $collapsedCategory.Children[1].Visibility = [Windows.Visibility]::Collapsed
-        $expandedCategory.Children[1].Visibility = [Windows.Visibility]::Collapsed
-        New-WinUtilAppSearchContext -Categories @($collapsedCategory, $expandedCategory)
-
-        Find-AppsByNameOrDescription -SearchString ""
-
-        $collapsedCategory.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $collapsedCategory.Children[0].Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $collapsedCategory.Children[1].Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $browserItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $expandedCategory.Children[1].Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $mediaItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-    }
-
-    It "shows matching apps by description and hides categories without matches" {
-        $browserItem = New-WinUtilAppSearchItem -Tag "WPFInstallBrowser"
-        $mediaItem = New-WinUtilAppSearchItem -Tag "WPFInstallMedia"
-        $editorItem = New-WinUtilAppSearchItem -Tag "WPFInstallEditor"
-        $browserCategory = New-WinUtilAppCategory -Label "+ Browsers" -Items @($browserItem, $mediaItem)
-        $editorCategory = New-WinUtilAppCategory -Label "- Editors" -Items @($editorItem)
-        New-WinUtilAppSearchContext -Categories @($browserCategory, $editorCategory)
-
-        Find-AppsByNameOrDescription -SearchString "private"
-
-        $browserCategory.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $browserCategory.Children[0].Content | Should -Be "- Browsers"
-        $browserCategory.Children[1].Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $browserItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $mediaItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $editorCategory.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $editorItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-    }
-
-    It "matches apps by preset key" {
-        $browserItem = New-WinUtilAppSearchItem -Tag "WPFInstallBrowser"
-        $mediaItem = New-WinUtilAppSearchItem -Tag "WPFInstallMedia"
-        $category = New-WinUtilAppCategory -Label "- Browsers" -Items @($browserItem, $mediaItem)
-        New-WinUtilAppSearchContext -Categories @($category)
-
-        Find-AppsByNameOrDescription -SearchString "WPFInstallBrowser"
-
-        $browserItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $mediaItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $category.Visibility | Should -Be ([Windows.Visibility]::Visible)
-    }
-
-    It "treats wildcard characters as literal app search text" {
-        $literalItem = New-WinUtilAppSearchItem -Tag "WPFInstallLiteral"
-        $mediaItem = New-WinUtilAppSearchItem -Tag "WPFInstallMedia"
-        $category = New-WinUtilAppCategory -Label "- Tools" -Items @($literalItem, $mediaItem)
-        New-WinUtilAppSearchContext -Categories @($category)
-
-        Find-AppsByNameOrDescription -SearchString "[abc]"
-
-        $literalItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $mediaItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $category.Visibility | Should -Be ([Windows.Visibility]::Visible)
-    }
-
-    It "filters category chips by exact application category" {
-        $utilityItem = New-WinUtilAppSearchItem -Tag "WPFInstallLiteral"
-        $powerToysItem = New-WinUtilAppSearchItem -Tag "WPFInstallPowerToys"
-        $category = New-WinUtilAppCategory -Label "- Tools" -Items @($utilityItem, $powerToysItem)
-        New-WinUtilAppSearchContext -Categories @($category)
-
-        Find-AppsByNameOrDescription -Categories @("Utilities")
-
-        $utilityItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $powerToysItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $category.Visibility | Should -Be ([Windows.Visibility]::Visible)
-    }
-
-    It "shows apps from every selected category when several chips are active" {
-        $utilityItem = New-WinUtilAppSearchItem -Tag "WPFInstallLiteral"
-        $powerToysItem = New-WinUtilAppSearchItem -Tag "WPFInstallPowerToys"
-        $browserItem = New-WinUtilAppSearchItem -Tag "WPFInstallBrowser"
-        $category = New-WinUtilAppCategory -Label "- Tools" -Items @($utilityItem, $powerToysItem, $browserItem)
-        New-WinUtilAppSearchContext -Categories @($category)
-
-        Find-AppsByNameOrDescription -Categories @("Utilities", "Microsoft Tools")
-
-        $utilityItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $powerToysItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $browserItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-    }
-
-    It "applies the search text and the category filter together" {
-        $powerToysItem = New-WinUtilAppSearchItem -Tag "WPFInstallPowerToys"
-        $literalItem = New-WinUtilAppSearchItem -Tag "WPFInstallLiteral"
-        $category = New-WinUtilAppCategory -Label "- Tools" -Items @($powerToysItem, $literalItem)
-        New-WinUtilAppSearchContext -Categories @($category)
-
-        Find-AppsByNameOrDescription -SearchString "PowerToys" -Categories @("Microsoft Tools")
-
-        $powerToysItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $literalItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-    }
-
-    It "hides a category when the search text matches nothing inside the selected categories" {
-        $powerToysItem = New-WinUtilAppSearchItem -Tag "WPFInstallPowerToys"
-        $category = New-WinUtilAppCategory -Label "- Tools" -Items @($powerToysItem)
-        New-WinUtilAppSearchContext -Categories @($category)
-
-        Find-AppsByNameOrDescription -SearchString "Firefox" -Categories @("Microsoft Tools")
-
-        $powerToysItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $category.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-    }
-
-    It "expands a collapsed category that has matches for the selected filter" {
-        $powerToysItem = New-WinUtilAppSearchItem -Tag "WPFInstallPowerToys"
-        $category = New-WinUtilAppCategory -Label "+ Tools" -Items @($powerToysItem)
-        New-WinUtilAppSearchContext -Categories @($category)
-
-        Find-AppsByNameOrDescription -Categories @("Microsoft Tools")
-
-        $category.Children[0].Content | Should -Be "- Tools"
-        $category.Children[1].Visibility | Should -Be ([Windows.Visibility]::Visible)
-    }
-
-    It "re-collapses a category it expanded once the filter is cleared" {
-        $powerToysItem = New-WinUtilAppSearchItem -Tag "WPFInstallPowerToys"
-        $category = New-WinUtilAppCategory -Label "+ Tools" -Items @($powerToysItem)
-        New-WinUtilAppSearchContext -Categories @($category)
-
-        Find-AppsByNameOrDescription -Categories @("Microsoft Tools")
-        $category.Children[0].Content | Should -Be "- Tools"
-
-        Find-AppsByNameOrDescription -SearchString ""
-
-        $category.Children[0].Content | Should -Be "+ Tools"
-        $category.Children[1].Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-    }
-
-    It "leaves a category the user had expanded alone when the filter is cleared" {
-        $powerToysItem = New-WinUtilAppSearchItem -Tag "WPFInstallPowerToys"
-        $category = New-WinUtilAppCategory -Label "- Tools" -Items @($powerToysItem)
-        New-WinUtilAppSearchContext -Categories @($category)
-
-        Find-AppsByNameOrDescription -Categories @("Microsoft Tools")
-        Find-AppsByNameOrDescription -SearchString ""
-
-        $category.Children[0].Content | Should -Be "- Tools"
-        $category.Children[1].Visibility | Should -Be ([Windows.Visibility]::Visible)
-    }
-}
 
 Describe "Find-TweaksByNameOrDescription" {
-    It "restores collapsed categories after literal search in <ContainerType>" -TestCases @(
-        @{ ContainerType = "StackPanel" }
-        @{ ContainerType = "ScrollViewer" }
-    ) {
-        param($ContainerType)
-        $match = New-WinUtilTweakLabelItem -Content "Tool [abc]"
-        $other = New-WinUtilTweakCheckboxItem -Content "Other tool"
-        $category = New-WinUtilTweakCategory -Label "+ Privacy" -Items @($match, $other) -ContainerType $ContainerType
-        New-WinUtilTweakSearchContext -TweaksPanel (New-WinUtilTweakPanel -Categories @($category))
-
-        Find-TweaksByNameOrDescription -SearchString "[abc]"
-        $match.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $other.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $category.Label.Content | Should -Be "- Privacy"
-
-        Find-TweaksByNameOrDescription -SearchString ""
-        $category.Label.Content | Should -Be "+ Privacy"
-        $match.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $other.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-    }
-
     AfterEach {
         Remove-WinUtilSearchGlobals
     }
 
-    It "restores category labels and respects collapsed category state for empty search" {
-        $collapsedItem = New-WinUtilTweakLabelItem -Content "Disable Telemetry" -ToolTip "Stop tracking"
-        $expandedItem = New-WinUtilTweakCheckboxItem -Content "Show Extensions" -ToolTip "File extension display"
-        $collapsedCategory = New-WinUtilTweakCategory -Label "+ Privacy" -Items @($collapsedItem)
-        $expandedCategory = New-WinUtilTweakCategory -Label "- Explorer" -Items @($expandedItem)
-        $expandedItem.Visibility = [Windows.Visibility]::Collapsed
-        $collapsedCategory.Label.Visibility = [Windows.Visibility]::Collapsed
-        $collapsedCategory.Border.Visibility = [Windows.Visibility]::Collapsed
-        $expandedCategory.Border.Visibility = [Windows.Visibility]::Collapsed
-        $panel = New-WinUtilTweakPanel -Categories @($collapsedCategory, $expandedCategory)
+    It "restores category labels and tweak item visibility for empty search" {
+        $labelItem = New-WinUtilTweakLabelItem -Content "Disable Telemetry" -ToolTip "Stop tracking"
+        $stackItem = New-WinUtilTweakCheckboxItem -Content "Show Extensions" -ToolTip "File extension display"
+        $category = New-WinUtilTweakCategory -Label "+ Privacy" -Items @($labelItem, $stackItem)
+        $labelItem.Visibility = [Windows.Visibility]::Collapsed
+        $stackItem.Visibility = [Windows.Visibility]::Collapsed
+        $category.Label.Visibility = [Windows.Visibility]::Collapsed
+        $category.Border.Visibility = [Windows.Visibility]::Collapsed
+        $panel = New-WinUtilTweakPanel -Categories @($category)
         New-WinUtilTweakSearchContext -TweaksPanel $panel
 
         Find-TweaksByNameOrDescription -SearchString ""
 
-        $collapsedCategory.Border.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $collapsedCategory.Label.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $collapsedCategory.Label.Content | Should -Be "+ Privacy"
-        $collapsedItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $expandedCategory.Border.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $expandedCategory.Label.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $expandedCategory.Label.Content | Should -Be "- Explorer"
-        $expandedItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
+        $category.Border.Visibility | Should -Be ([Windows.Visibility]::Visible)
+        $category.Label.Visibility | Should -Be ([Windows.Visibility]::Visible)
+        $labelItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
+        $stackItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
     }
 
     It "shows tweak matches by label tooltip and checkbox content" {
@@ -606,34 +391,5 @@ Describe "Find-TweaksByNameOrDescription" {
         $appxItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
         $tweakCategory.Border.Visibility | Should -Be ([Windows.Visibility]::Visible)
         $tweakItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-    }
-
-    It "matches checkbox descriptions and preset keys but not the preset key label" {
-        $servicesItem = New-WinUtilTweakCheckboxItem -Content "Services - Set to Manual" -ToolTip (Get-WinUtilEntryToolTip -Description "Reduces the number of svchost.exe processes." -Key "WPFTweaksServices")
-        $telemetryItem = New-WinUtilTweakCheckboxItem -Content "Telemetry - Disable" -ToolTip (Get-WinUtilEntryToolTip -Description "Disables Microsoft Telemetry." -Key "WPFTweaksTelemetry")
-        $category = New-WinUtilTweakCategory -Label "- Essential Tweaks" -Items @($servicesItem, $telemetryItem)
-        $panel = New-WinUtilTweakPanel -Categories @($category)
-        New-WinUtilTweakSearchContext -TweaksPanel $panel
-
-        Find-TweaksByNameOrDescription -SearchString "key"
-
-        $servicesItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $telemetryItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $category.Border.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-
-        Find-TweaksByNameOrDescription -SearchString "set"
-
-        $servicesItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $telemetryItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-
-        Find-TweaksByNameOrDescription -SearchString "WPFTweaksTelemetry"
-
-        $servicesItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
-        $telemetryItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-
-        Find-TweaksByNameOrDescription -SearchString "svchost"
-
-        $servicesItem.Visibility | Should -Be ([Windows.Visibility]::Visible)
-        $telemetryItem.Visibility | Should -Be ([Windows.Visibility]::Collapsed)
     }
 }

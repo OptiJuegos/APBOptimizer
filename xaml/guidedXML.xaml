@@ -1,0 +1,143 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" WindowStartupLocation="CenterScreen" UseLayoutRounding="True" WindowStyle="SingleBorderWindow" Width="1060" Height="720" MinWidth="860" MinHeight="600" Title="APBOptimizer" Background="{DynamicResource MainBackgroundColor}">
+    <!-- Separate guided-mode window. Styles and theme colours come from the main window's
+         resources, merged in at runtime, so every style here is a DynamicResource. -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" CornerRadius="10" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+    <Grid Name="WPFGuidedRoot" Background="{DynamicResource MainBackgroundColor}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Name="WPFGuidedTitleBar" Grid.Row="0" Height="46" Background="{DynamicResource MainBackgroundColor}" LastChildFill="True">
+            <StackPanel Name="GuidedLogoPanel" Orientation="Horizontal" DockPanel.Dock="Left" Margin="14,0,10,0" VerticalAlignment="Center" />
+            <Button Name="WPFGuidedCloseWindow" DockPanel.Dock="Right" Style="{DynamicResource HoverButtonStyle}" BorderThickness="0" BorderBrush="Transparent" Background="{DynamicResource MainBackgroundColor}" Foreground="{DynamicResource MainForegroundColor}" Width="{DynamicResource IconButtonSize}" Height="{DynamicResource IconButtonSize}" Margin="0,0,6,0" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource CloseIconFontSize}" Content="&#xE8BB;" ToolTip="Cerrar" AutomationProperties.Name="Cerrar" />
+            <Button Name="WPFGuidedMinimizeWindow" DockPanel.Dock="Right" Style="{DynamicResource HoverButtonStyle}" BorderThickness="0" BorderBrush="Transparent" Background="{DynamicResource MainBackgroundColor}" Foreground="{DynamicResource MainForegroundColor}" Width="{DynamicResource IconButtonSize}" Height="{DynamicResource IconButtonSize}" Margin="0" FontFamily="Segoe MDL2 Assets" FontSize="{DynamicResource CloseIconFontSize}" Content="&#xE921;" ToolTip="Minimizar" AutomationProperties.Name="Minimizar" />
+            <TextBlock Name="WPFGuidedWindowTitle" Text="APBOptimizer" VerticalAlignment="Center" FontFamily="Consolas, Monaco" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" />
+        </DockPanel>
+
+        <Grid Grid.Row="1">
+            <ScrollViewer Name="WPFModeChooser" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Visibility="Collapsed">
+                <StackPanel MaxWidth="860" Margin="32,24,32,36" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Name="WPFModeChooserTitle" Text="¿Cómo quieres optimizar Windows?" FontSize="28" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" />
+                    <TextBlock Name="WPFModeChooserSubtitle" Text="El modo guiado te hace una pregunta a la vez. El modo avanzado abre la interfaz completa de APBOptimizer." FontSize="14" TextAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Opacity="0.8" Margin="0,8,0,24" />
+                    <UniformGrid Columns="2">
+                        <Button Name="WPFModeGuided" Style="{DynamicResource GuidedCardButton}" Margin="0,0,10,0" AutomationProperties.Name="Modo guiado">
+                            <StackPanel>
+                                <Border HorizontalAlignment="Left" Background="{DynamicResource ToggleButtonOnColor}" CornerRadius="10" Padding="10,3">
+                                    <TextBlock Name="WPFModeGuidedBadge" Text="Recomendado" FontSize="12" FontWeight="Bold" Foreground="White" Background="Transparent" />
+                                </Border>
+                                <TextBlock Name="WPFModeGuidedTitle" Text="Modo guiado" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Margin="0,14,0,8" />
+                                <TextBlock Name="WPFModeGuidedText" Text="Una pregunta por pantalla, con una explicación de qué cambia. Ves un resumen antes de aplicar nada." FontSize="14" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" />
+                                <TextBlock Name="WPFModeGuidedMeta" Text="Unos 3 minutos" FontSize="13" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Opacity="0.75" Margin="0,12,0,0" />
+                            </StackPanel>
+                        </Button>
+                        <Button Name="WPFModeAdvanced" Style="{DynamicResource GuidedCardButton}" Margin="10,0,0,0" AutomationProperties.Name="Modo avanzado">
+                            <StackPanel>
+                                <Border HorizontalAlignment="Left" Background="Transparent" Padding="0,3">
+                                    <TextBlock Text=" " FontSize="12" Background="Transparent" />
+                                </Border>
+                                <TextBlock Name="WPFModeAdvancedTitle" Text="Modo avanzado" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Margin="0,14,0,8" />
+                                <TextBlock Name="WPFModeAdvancedText" Text="Abre la interfaz completa con todos los ajustes, servicios, drivers y opciones de Windows Update." FontSize="14" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" />
+                                <TextBlock Name="WPFModeAdvancedMeta" Text="Para quienes saben qué tocar" FontSize="13" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Opacity="0.75" Margin="0,12,0,0" />
+                            </StackPanel>
+                        </Button>
+                    </UniformGrid>
+                </StackPanel>
+            </ScrollViewer>
+
+            <Grid Name="WPFGuidedWizard" Margin="40,10,40,16" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0">
+                    <DockPanel>
+                        <TextBlock Name="WPFGuidedStep" DockPanel.Dock="Right" FontSize="13" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Opacity="0.8" />
+                        <TextBlock Name="WPFGuidedCategory" FontSize="13" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Opacity="0.8" />
+                    </DockPanel>
+                    <ProgressBar Name="WPFGuidedProgress" Height="8" Minimum="0" Maximum="100" Value="0" Margin="0,8,0,0" Style="{DynamicResource RoundedProgressBarStyle}" Foreground="{DynamicResource ToggleButtonOnColor}" />
+                </StackPanel>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,22,0,12">
+                    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+                        <WrapPanel Name="WPFGuidedBadges" />
+                        <TextBlock Name="WPFGuidedTitle" FontSize="28" FontWeight="Bold" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Margin="0,12,0,0" />
+                        <TextBlock Name="WPFGuidedBody" FontSize="15" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Opacity="0.9" Margin="0,12,0,0" LineHeight="22" />
+                        <StackPanel Name="WPFGuidedDetails" Margin="0,16,0,0" Visibility="Collapsed">
+                            <TextBlock Name="WPFGuidedDetailsTitle" Text="Qué cambia" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Margin="0,0,0,6" />
+                            <StackPanel Name="WPFGuidedDetailsList" />
+                        </StackPanel>
+                        <StackPanel Name="WPFGuidedBenefits" Margin="0,16,0,0" Visibility="Collapsed">
+                            <TextBlock Name="WPFGuidedBenefitsTitle" Text="Ventajas" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Margin="0,0,0,6" />
+                            <StackPanel Name="WPFGuidedBenefitsList" />
+                        </StackPanel>
+                        <Border Name="WPFGuidedNote" Background="{DynamicResource TweakHelpSectionColor}" BorderBrush="{DynamicResource TweakHelpBorderColor}" BorderThickness="1" CornerRadius="6" Padding="14,12" Margin="0,16,0,0" Visibility="Collapsed">
+                            <TextBlock Name="WPFGuidedNoteText" FontSize="14" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" />
+                        </Border>
+                        <Border Name="WPFGuidedAdvice" BorderThickness="1.5" CornerRadius="6" Padding="14,12" Margin="0,16,0,0" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Name="WPFGuidedAdviceTitle" FontSize="14" FontWeight="Bold" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" />
+                                <TextBlock Name="WPFGuidedAdviceText" FontSize="14" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Opacity="0.9" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Name="WPFGuidedState" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Margin="0,14,0,0" Visibility="Collapsed" />
+                        <StackPanel Name="WPFGuidedOptions" Margin="0,16,0,0" />
+                        <TextBlock Name="WPFGuidedStartupStatus" FontSize="13" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Margin="0,12,0,0" Visibility="Collapsed" />
+                    </StackPanel>
+                </ScrollViewer>
+                <DockPanel Grid.Row="2" LastChildFill="False">
+                    <Button Name="WPFGuidedBack" DockPanel.Dock="Left" Content="Atrás" Width="Auto" MinWidth="150" Height="40" FontSize="15" Margin="0" />
+                    <Button Name="WPFGuidedYes" DockPanel.Dock="Right" Content="Sí" Width="Auto" MinWidth="150" Height="40" FontSize="15" Margin="10,0,0,0" />
+                    <Button Name="WPFGuidedNo" DockPanel.Dock="Right" Content="No" Width="Auto" MinWidth="150" Height="40" FontSize="15" Margin="0" />
+                </DockPanel>
+            </Grid>
+
+            <Grid Name="WPFGuidedSummary" Margin="40,10,40,16" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0">
+                    <TextBlock Name="WPFGuidedSummaryTitle" FontSize="26" FontWeight="Bold" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" />
+                    <TextBlock Name="WPFGuidedSummarySubtitle" FontSize="14" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Opacity="0.8" Margin="0,6,0,0" />
+                </StackPanel>
+                <Border Grid.Row="1" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="6" Margin="0,16,0,10">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Name="WPFGuidedSummaryList" />
+                    </ScrollViewer>
+                </Border>
+                <TextBlock Name="WPFGuidedSummaryNote" Grid.Row="2" FontSize="13" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Opacity="0.8" Margin="0,0,0,12" />
+                <DockPanel Grid.Row="3" LastChildFill="False">
+                    <Button Name="WPFGuidedSummaryBack" DockPanel.Dock="Left" Content="Atrás" Width="Auto" MinWidth="150" Height="40" FontSize="15" Margin="0" />
+                    <Button Name="WPFGuidedApply" DockPanel.Dock="Right" Content="Aplicar" Width="Auto" MinWidth="170" Height="40" FontSize="15" Margin="10,0,0,0" Style="{DynamicResource GuidedPrimaryButton}" />
+                    <Button Name="WPFGuidedReview" DockPanel.Dock="Right" Content="Revisar en modo avanzado" Width="Auto" MinWidth="150" Height="40" FontSize="15" Margin="0" />
+                </DockPanel>
+            </Grid>
+
+            <ScrollViewer Name="WPFGuidedDone" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Visibility="Collapsed">
+                <StackPanel MaxWidth="680" Margin="32,40" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Name="WPFGuidedDoneTitle" FontSize="28" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" />
+                    <TextBlock Name="WPFGuidedDoneText" FontSize="15" TextAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Opacity="0.9" Margin="0,14,0,20" />
+                    <Border Name="WPFGuidedErrors" Background="{DynamicResource TweakHelpSectionColor}" BorderBrush="#E07B24" BorderThickness="1" CornerRadius="6" Padding="14,12" Margin="0,0,0,20" Visibility="Collapsed">
+                        <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Name="WPFGuidedErrorsList" />
+                        </ScrollViewer>
+                    </Border>
+                    <StackPanel Name="WPFGuidedJobPanel" Margin="0,0,0,20">
+                        <TextBlock Name="WPFGuidedJobLabel" FontSize="13" TextWrapping="Wrap" Foreground="{DynamicResource MainForegroundColor}" Background="Transparent" Opacity="0.8" Margin="0,0,0,6" />
+                        <ProgressBar Name="WPFGuidedJobProgress" Height="8" Minimum="0" Maximum="100" Value="0" Style="{DynamicResource RoundedProgressBarStyle}" Foreground="{DynamicResource ToggleButtonOnColor}" />
+                    </StackPanel>
+                    <WrapPanel Name="WPFGuidedDoneButtons" HorizontalAlignment="Center" Visibility="Collapsed">
+                        <Button Name="WPFGuidedDoneAdvanced" Content="Ir al modo avanzado" Width="Auto" MinWidth="150" Height="40" FontSize="15" Margin="5,0" />
+                        <Button Name="WPFGuidedDoneHome" Content="Volver al inicio" Width="Auto" MinWidth="150" Height="40" FontSize="15" Margin="5,0" />
+                        <Button Name="WPFGuidedRestart" Content="Reiniciar ahora" Width="Auto" MinWidth="150" Height="40" FontSize="15" Margin="5,0" Style="{DynamicResource GuidedPrimaryButton}" />
+                    </WrapPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Window>

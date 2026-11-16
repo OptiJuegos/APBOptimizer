@@ -1,4 +1,4 @@
-#===========================================================================
+﻿#===========================================================================
 # Tests - General Sanity
 #===========================================================================
 
@@ -33,7 +33,7 @@ BeforeAll {
             $env:WINUTIL_TEST_PARSE_PATHS = @($Path) -join [Environment]::NewLine
             $parseScript = @'
 $ErrorActionPreference = 'Stop'
-$paths = $env:WINUTIL_TEST_PARSE_PATHS -split '\r?\n' | Where-Object { $_ }
+$paths = $env:WINUTIL_TEST_PARSE_PATHS -split "`r?`n" | Where-Object { $_ }
 $failed = @()
 
 foreach ($path in $paths) {
@@ -43,7 +43,7 @@ foreach ($path in $paths) {
 
     if ($syntaxErrors.Count -ne 0) {
         $messages = $syntaxErrors | ForEach-Object { $_.Message }
-        $failed += ('[' + $path + '] ' + ($messages -join '; '))
+        $failed += "[$path] $($messages -join '; ')"
     }
 }
 
@@ -71,7 +71,6 @@ if ($failed.Count -gt 0) {
 Describe "PowerShell source sanity" {
     $scriptCases = @(
         "Compile.ps1",
-        "windev.ps1",
         "scripts\start.ps1",
         "scripts\main.ps1"
     ) | ForEach-Object {
@@ -92,7 +91,6 @@ Describe "PowerShell source sanity" {
     It "parses WinUtil source files with Windows PowerShell when available" {
         $sourcePaths = @(
             Join-Path $script:repoRoot "Compile.ps1"
-            Join-Path $script:repoRoot "windev.ps1"
             Join-Path $script:repoRoot "scripts\start.ps1"
             Join-Path $script:repoRoot "scripts\main.ps1"
             Get-ChildItem -Path (Join-Path $script:repoRoot "functions") -Filter *.ps1 -Recurse | Select-Object -ExpandProperty FullName
@@ -126,12 +124,11 @@ Describe "Compiled WinUtil sanity" {
         Invoke-WindowsPowerShellParser -Path $script:compiledPath
     }
 
-    It "contains embedded configs, XAML, autounattend XML, and runspace bootstrap" {
+    It "contains embedded tweak configs, XAML and runspace bootstrap" {
         $content = Get-Content -Path $script:compiledPath -Raw
         $requiredSnippets = @(
-            ('$sync.configs.applications = @' + "'"),
+            ('$sync.configs.tweaks = @' + "'"),
             ('$inputXML = @' + "'"),
-            ('$WinUtilAutounattendXml = @' + "'"),
             "SessionStateVariableEntry",
             "SessionStateFunctionEntry",
             "[runspacefactory]::CreateRunspacePool",
@@ -147,39 +144,15 @@ Describe "Compiled WinUtil sanity" {
         }
     }
 
-    It "transforms applications config keys with WPFInstall prefixes" {
-        $content = Get-Content -Path $script:compiledPath -Raw
-        $configMatch = [regex]::Match(
-            $content,
-            "(?s)\`$sync\.configs\.applications = @'\r?\n(?<json>.*?)\r?\n'@ \| ConvertFrom-Json"
-        )
 
-        if (-not $configMatch.Success) {
-            throw "Compiled script is missing embedded applications config."
-        }
-
-        $sourceApps = Get-Content -Path (Join-Path $script:repoRoot "config\applications.json") -Raw | ConvertFrom-Json
-        $compiledApps = $configMatch.Groups["json"].Value | ConvertFrom-Json
-
-        foreach ($sourceApp in $sourceApps.PSObject.Properties) {
-            $compiledKey = "WPFInstall$($sourceApp.Name)"
-            if ($compiledApps.PSObject.Properties.Name -notcontains $compiledKey) {
-                throw "Compiled applications config is missing transformed key: $compiledKey"
-            }
-            if ($compiledApps.PSObject.Properties.Name -contains $sourceApp.Name) {
-                throw "Compiled applications config contains untransformed source key: $($sourceApp.Name)"
-            }
-        }
-    }
 
     It "preserves compile source ordering" {
         $content = Get-Content -Path $script:compiledPath -Raw
         $orderedSnippets = @(
             '$sync.version =',
-            'function Add-SelectedAppsMenuItem',
-            ('$sync.configs.applications = @' + "'"),
+            'function Close-WinUtilRunspacePool',
+            ('$sync.configs.tweaks = @' + "'"),
             ('$inputXML = @' + "'"),
-            ('$WinUtilAutounattendXml = @' + "'"),
             '$uiShell.AddScript({ Start-WinUtilUserInterface })'
         )
 

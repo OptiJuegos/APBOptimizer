@@ -1,4 +1,4 @@
-function Invoke-WPFUIElements {
+﻿function Invoke-WPFUIElements {
     <#
     .SYNOPSIS
         Adds UI elements to a specified Grid in the WinUtil GUI based on a JSON configuration.
@@ -9,7 +9,7 @@ function Invoke-WPFUIElements {
     .PARAMETER columncount
         The number of columns to be used in the Grid. If not provided, a default value is used based on the panel.
     .EXAMPLE
-        Invoke-WPFUIElements -configVariable $sync.configs.applications -targetGridName "install" -columncount 5
+        Invoke-WPFUIElements -configVariable $sync.configs.tweaks -targetGridName "tweakspanel" -columncount 2
     .NOTES
         Future me/contributor: If possible, please wrap this into a runspace to make it load all panels at the same time.
     #>
@@ -35,6 +35,10 @@ function Invoke-WPFUIElements {
     $HoverTextBlockStyle = $window.FindResource("HoverTextBlockStyle")
     $ColorfulToggleSwitchStyle = $window.FindResource("ColorfulToggleSwitchStyle")
     $ToggleButtonStyle = $window.FindResource("ToggleButtonStyle")
+    $linkFontSizeDescriptor = [System.ComponentModel.DependencyPropertyDescriptor]::FromProperty(
+        [Windows.Controls.Control]::FontSizeProperty,
+        [Windows.Controls.TextBlock]
+    )
 
     if (!$borderstyle -or !$HoverTextBlockStyle -or !$ColorfulToggleSwitchStyle) {
         throw "Failed to retrieve Styles using 'FindResource' from main window element."
@@ -57,40 +61,54 @@ function Invoke-WPFUIElements {
         $targetGrid.ColumnDefinitions.Add($colDef) | Out-Null
     }
 
+    # Convert PSCustomObject to Hashtable
+    $configHashtable = @{}
+    $configVariable.PSObject.Properties.Name | ForEach-Object {
+        $configHashtable[$_] = $configVariable.$_
+    }
+
     $radioButtonGroups = @{}
+
     $organizedData = @{}
+    # Iterate through JSON data and organize by panel and category
+    foreach ($entry in $configHashtable.Keys) {
+        $entryInfo = $configHashtable[$entry]
+        $entryLocale = Get-WinUtilLocalizedEntry -Key $entry
+        # Children are rendered inside the group's drop-down, never as separate
+        # rows at the category level.
+        if ($entryInfo.ParentGroup -or $entryInfo.LegacyOnly) { continue }
 
-    # Iterate through JSON data and organize by panel and category using generic lists
-    foreach ($prop in $configVariable.PSObject.Properties) {
-        $entryInfo = $prop.Value
-
+        # Create an object for the application
         $entryObject = [PSCustomObject]@{
-            Name        = $prop.Name
+            Name        = $entry
             Category    = $entryInfo.Category
-            Content     = $entryInfo.Content
+            Content     = if ($entryLocale -and $null -ne $entryLocale.Content) { $entryLocale.Content } else { $entryInfo.Content }
             Panel       = if ($entryInfo.Panel) { $entryInfo.Panel } else { "0" }
             Link        = $entryInfo.link
-            Description = $entryInfo.description
+            Description = if ($entryLocale -and $null -ne $entryLocale.Description) { $entryLocale.Description } else { $entryInfo.description }
             Type        = $entryInfo.type
             ComboItems  = $entryInfo.ComboItems
+            LocalizedComboItems = if ($entryLocale) { $entryLocale.ComboItems } else { $null }
             ComboDescriptions = $entryInfo.ComboDescriptions
+            LocalizedComboDescriptions = if ($entryLocale) { $entryLocale.ComboDescriptions } else { $null }
             Registry    = $entryInfo.registry
             Checked     = $entryInfo.Checked
             ButtonWidth = $entryInfo.ButtonWidth
-            GroupName   = $entryInfo.GroupName
+            GroupName   = $entryInfo.GroupName  # Added for RadioButton groupings
+            Children    = $entryInfo.Children
         }
 
-        $panel = $entryObject.Panel
-        if (-not $organizedData.ContainsKey($panel)) {
-            $organizedData[$panel] = @{}
+        if (-not $organizedData.ContainsKey($entryObject.Panel)) {
+            $organizedData[$entryObject.Panel] = @{}
         }
 
-        $cat = $entryObject.Category
-        if (-not $organizedData[$panel].ContainsKey($cat)) {
-            $organizedData[$panel][$cat] = [System.Collections.Generic.List[object]]::new()
+        if (-not $organizedData[$entryObject.Panel].ContainsKey($entryObject.Category)) {
+            $organizedData[$entryObject.Panel][$entryObject.Category] = @()
         }
 
-        $organizedData[$panel][$cat].Add($entryObject)
+        # Store application data in an array under the category
+        $organizedData[$entryObject.Panel][$entryObject.Category] += $entryObject
+
     }
 
     # Initialize panel count
@@ -104,7 +122,6 @@ function Invoke-WPFUIElements {
         $border.VerticalAlignment = "Stretch"
         [System.Windows.Controls.Grid]::SetColumn($border, $panelcount)
         $border.style = $borderstyle
-        $targetGrid.Children.Add($border) | Out-Null
 
         # Use a DockPanel to contain the content
         $dockPanelContainer = New-Object Windows.Controls.DockPanel
@@ -146,11 +163,12 @@ function Invoke-WPFUIElements {
         $panelcount++
 
         # Now proceed with adding category labels and entries to $stackPanelContainer
+        $columnAttached = $false
         foreach ($category in ($organizedData[$panelKey].Keys | Sort-Object)) {
 
             $label = New-Object Windows.Controls.Label
             $categoryCleanName = $category -replace ".*__", ""
-            $label.Content = $categoryCleanName
+            $label.Content = Get-WinUtilLocalizedCategory -Category $categoryCleanName
             $label.Focusable = $true
             $label.IsTabStop = $true
             [System.Windows.Automation.AutomationProperties]::SetName($label, $categoryCleanName)
@@ -174,7 +192,7 @@ function Invoke-WPFUIElements {
                 # Constructing a panel's worth of controls in one go holds the interface for
                 # hundreds of milliseconds. Draining the queue on a deadline rather than every
                 # nth entry keeps the wait bounded whatever the entries cost to build.
-                if ($Yield -and $yieldClock.ElapsedMilliseconds -ge 25 -and (Test-WinUtilUIAlive)) {
+                if ($Yield -and $columnAttached -and $yieldClock.ElapsedMilliseconds -ge 75 -and (Test-WinUtilUIAlive)) {
                     $yieldClock.Restart()
                     $frame = New-Object Windows.Threading.DispatcherFrame
                     $null = $sync.Form.Dispatcher.BeginInvoke(
@@ -190,6 +208,316 @@ function Invoke-WPFUIElements {
 
                 # Create the UI elements based on the entry type
                 switch ($entryInfo.Type) {
+                    { $_ -in @('ServiceGroup', 'DriverGroup', 'TaskGroup') } {
+                        $isDriverGroup = ($entryInfo.Type -eq 'DriverGroup')
+                        $isTaskGroup = ($entryInfo.Type -eq 'TaskGroup')
+                        # Same small checkboxes as ordinary Advanced Tweaks. A frameless
+                        # triangle at the left only expands/collapses the indented list.
+                        $groupWrapper = New-Object Windows.Controls.StackPanel
+                        # Populate search terms after checking installed services,
+                        # so searching for an unavailable service does not show it.
+                        # Ordinary entries use only the checkbox's own margins.
+                        # Extra wrapper spacing made this row noticeably taller.
+                        $groupWrapper.Margin = '0'
+                        # A shared grid lets the arrow sit immediately before the
+                        # checkmark without shifting that checkmark off the column
+                        # used by the other Advanced Tweaks.
+                        $header = New-Object Windows.Controls.Grid
+                        $header.VerticalAlignment = 'Center'
+
+                        $expand = New-Object Windows.Controls.Button
+                        $expand.Name = $entryInfo.Name + 'Expander'
+                        $expand.Content = 'Collapsed'
+                        $expand.Style = $window.FindResource('ServiceGroupExpanderStyle')
+                        $expand.HorizontalAlignment = 'Left'
+                        $expand.VerticalAlignment = 'Center'
+                        $expand.Margin = '19,-1,0,3'
+                        $expand.ToolTip = if ($isTaskGroup) { 'Expand or collapse the scheduled task list' } elseif ($isDriverGroup) { 'Expand or collapse the driver list' } else { 'Expand or collapse the service list' }
+                        # The checkbox's outer transparent area overlaps the arrow;
+                        # keep the arrow above it so both hit targets work.
+                        [Windows.Controls.Panel]::SetZIndex($expand, 1)
+                        $header.Children.Add($expand) | Out-Null
+
+                        $master = New-Object Windows.Controls.CheckBox
+                        $master.Name = $entryInfo.Name
+                        $master.Content = $entryInfo.Content
+                        $master.HorizontalAlignment = 'Left'
+                        $master.VerticalAlignment = 'Center'
+                        # Match the visible square's baseline and the 18px height
+                        # of normal Advanced rows without adding bottom padding.
+                        $master.Margin = '15,-1,0,1'
+                        $master.UseLayoutRounding = $true
+                        $master.ToolTip = if ($isTaskGroup) {
+                            "Disable or restore all available optional scheduled tasks. $($entryInfo.Description)"
+                        } elseif ($isDriverGroup) {
+                            "Select eligible drivers; changes run only when you click Apply Tweaks. Review each driver's impact and reboot. $($entryInfo.Description)"
+                        } else { "Select services to disable or restore when you click Apply Tweaks. $($entryInfo.Description)" }
+                        $master.Tag = @{ Children = [string[]]@($entryInfo.Children); Updating = $false; IsDriverGroup = $isDriverGroup; IsTaskGroup = $isTaskGroup; NoManageableDrivers = $false; AllAlreadyDisabled = $false; UnavailableMessage = '' }
+                        [System.Windows.Automation.AutomationProperties]::SetName($master, $entryInfo.Content)
+                        $header.Children.Add($master) | Out-Null
+
+                        $groupWrapper.Children.Add($header) | Out-Null
+
+                        $childPanel = New-Object Windows.Controls.StackPanel
+                        $childPanel.Margin = '30,1,0,2'
+                        $childPanel.Visibility = [Windows.Visibility]::Collapsed
+                        $groupWrapper.Children.Add($childPanel) | Out-Null
+                        $stackPanelContainer.Children.Add($groupWrapper) | Out-Null
+                        $sync[$entryInfo.Name] = $master
+                        $sync[$expand.Name] = $expand
+                        $sync[$entryInfo.Name + 'Children'] = $childPanel
+
+                        $expand.Tag = $childPanel
+                        $expand.Add_Click({
+                            $children = $this.Tag
+                            $isOpening = ($children.Visibility -ne [Windows.Visibility]::Visible)
+                            $children.Visibility = if ($isOpening) { [Windows.Visibility]::Visible } else { [Windows.Visibility]::Collapsed }
+                            $this.Content = if ($isOpening) { 'Expanded' } else { 'Collapsed' }
+                        })
+
+                        # One scheduler read per TaskGroup render. The previous
+                        # per-child status + info checks enumerated every Windows
+                        # task twenty times and stalled the UI for seconds.
+                        $taskSnapshot = @()
+                        $taskBackup = $null
+                        $taskReadError = $null
+                        if ($isTaskGroup) {
+                            try {
+                                $taskSnapshot = @(Get-WinUtilTelemetryTaskSnapshot)
+                                $taskBackup = Get-WinUtilTelemetryTaskBackup
+                            } catch {
+                                $taskReadError = $_.Exception.Message
+                            }
+                            if ($null -eq $sync.ToggleStatusCache) {
+                                $sync.ToggleStatusCache = @{}
+                            }
+                        }
+                        $driverMissingNames = [System.Collections.Generic.List[string]]::new()
+                        $driverAlreadyDisabledNames = [System.Collections.Generic.List[string]]::new()
+                        $driverProtectedNames = [System.Collections.Generic.List[string]]::new()
+                        foreach ($childKey in @($entryInfo.Children)) {
+                            $childConfig = $configHashtable[$childKey]
+                            $childLocale = Get-WinUtilLocalizedEntry -Key $childKey
+                            if ($null -eq $childConfig -or $childConfig.Type -ne 'Toggle' -or $childConfig.ParentGroup -ne $entryInfo.Name -or
+                                ($isDriverGroup -and -not $childConfig.driver.Name) -or ($isTaskGroup -and -not $childConfig.scheduledTask.Name)) {
+                                throw "Invalid group child '$childKey' in '$($entryInfo.Name)'."
+                            }
+                            $childToggle = New-Object Windows.Controls.CheckBox
+                            $childToggle.Name = $childKey
+                            $childToggle.Content = if ($childLocale -and $childLocale.Content) { $childLocale.Content } else { $childConfig.Content }
+                            $childToggle.HorizontalAlignment = 'Left'
+                            $childToggle.VerticalAlignment = 'Center'
+                            $childToggle.Margin = '0,1,0,1'
+                            $childToggle.UseLayoutRounding = $true
+                            $childToggle.Tag = @{ Group = $entryInfo.Name; Updating = $false; IsDriverGroup = $isDriverGroup; IsTaskGroup = $isTaskGroup }
+                            $childInfo = if ($childLocale -and $childLocale.Description) { $childLocale.Description } else { $childConfig.Description }
+                            $childToggle.ToolTip = if ($isTaskGroup) { $childInfo } elseif ($isDriverGroup) { "$childInfo $(if ($sync.Language -eq 'es') { 'Pulsa Aplicar ajustes para realizar cambios. Se requiere reiniciar.' } else { 'Click Apply Tweaks to make changes. A reboot is required.' })" } else {
+                                if ($sync.Language -eq 'es') { "$childInfo Los cambios se realizan al pulsar Aplicar ajustes." } else { "$childInfo Changes run when you click Apply Tweaks." }
+                            }
+                            [System.Windows.Automation.AutomationProperties]::SetName($childToggle, $childConfig.Content)
+                            $childPanel.Children.Add($childToggle) | Out-Null
+                            $sync[$childKey] = $childToggle
+
+                            if ($isTaskGroup) {
+                                if ($taskReadError) {
+                                    $childToggle.IsEnabled = $false
+                                    $childToggle.ToolTip = "$($childToggle.ToolTip) $taskReadError"
+                                } else {
+                                    try {
+                                        $taskInfo = Get-WinUtilTelemetryTaskInfo -Name $childConfig.scheduledTask.Name -TaskSnapshot $taskSnapshot -Backup $taskBackup
+                                        $sync.ToggleStatusCache[$childKey] = [bool]$taskInfo.Disabled
+                                        $childToggle.IsChecked = [bool]$taskInfo.Disabled
+                                        if ($null -ne $sync.PendingTaskSelections -and
+                                            $sync.PendingTaskSelections.ContainsKey($childKey)) {
+                                            $childToggle.IsChecked = [bool]$sync.PendingTaskSelections[$childKey]
+                                        }
+                                        if (-not $taskInfo.Present) {
+                                            $childToggle.IsEnabled = $false
+                                            $childToggle.Visibility = [Windows.Visibility]::Collapsed
+                                        } elseif (-not $taskInfo.CanChange) {
+                                            $childToggle.IsEnabled = $false
+                                            $childToggle.ToolTip = "$($childToggle.ToolTip) $($taskInfo.Reason)"
+                                        }
+                                    } catch {
+                                        $childToggle.IsEnabled = $false
+                                        $childToggle.ToolTip = "$($childToggle.ToolTip) $($_.Exception.Message)"
+                                    }
+                                }
+                            } else {
+                                if ($isDriverGroup) {
+                                    $driverInfo = Get-WinUtilOptionalDriverInfo -Name $childConfig.driver.Name
+                                    $childToggle.IsChecked = [bool]$driverInfo.Disabled
+                                } else {
+                                    $servicePresent = $true
+                                    $serviceDisabled = $true
+                                    foreach ($serviceEntry in @($childConfig.service)) {
+                                        $serviceInfo = Get-Service -Name $serviceEntry.Name -ErrorAction SilentlyContinue
+                                        if ($null -eq $serviceInfo) {
+                                            $servicePresent = $false
+                                            $serviceDisabled = $false
+                                            break
+                                        }
+                                        if ([string]$serviceInfo.StartType -ne [string]$serviceEntry.StartupType) {
+                                            $serviceDisabled = $false
+                                        }
+                                    }
+                                    $childToggle.IsChecked = $serviceDisabled
+                                }
+                                if ($null -eq $sync.ToggleStatusCache) {
+                                    $sync.ToggleStatusCache = @{}
+                                }
+                                # Store the real initial state once. Subsequent
+                                # checkbox events only compare with this cache.
+                                $sync.ToggleStatusCache[$childKey] = [bool]$childToggle.IsChecked
+                                if ($null -ne $sync.PendingGroupSelections -and
+                                    $sync.PendingGroupSelections.ContainsKey($childKey)) {
+                                    $childToggle.IsChecked = [bool]$sync.PendingGroupSelections[$childKey]
+                                }
+                            }
+                            if ($isDriverGroup) {
+                                if (-not $driverInfo.Present) {
+                                    $driverMissingNames.Add($childConfig.driver.Name)
+                                    $childToggle.IsEnabled = $false
+                                    $childToggle.Visibility = [Windows.Visibility]::Collapsed
+                                } elseif (-not $driverInfo.CanChange) {
+                                    $reason = $driverInfo.Reason
+                                    if ($driverInfo.Disabled -and -not $driverInfo.Managed) {
+                                        $driverAlreadyDisabledNames.Add($childConfig.driver.Name)
+                                        if ($sync.Language -eq 'es') { $reason = 'Ya estaba desactivado fuera de APBOptimizer; no hay un modo de inicio original guardado para reactivarlo.' }
+                                    } else {
+                                        $driverProtectedNames.Add($childConfig.driver.Name)
+                                    }
+                                    $childToggle.IsEnabled = $false
+                                    $childToggle.ToolTip = "$($childToggle.ToolTip) $reason"
+                                }
+                            } elseif (-not $isTaskGroup -and -not $servicePresent) {
+                                $childToggle.IsEnabled = $false
+                                # Missing services do not occupy space in the list.
+                                $childToggle.Visibility = [Windows.Visibility]::Collapsed
+                            }
+
+                            # All three advanced groups only stage selections.
+                            # The main Apply Tweaks job changes the OS later.
+                            $onServiceChange = {
+                                [System.Object]$senderControl = $args[0]
+                                if ($senderControl.Tag.Updating) { return }
+                                $requested = ($senderControl.IsChecked -eq $true)
+                                if (-not $sync.ImportInProgress) {
+                                    $pendingName = if ($senderControl.Tag.IsTaskGroup) {
+                                        'PendingTaskSelections'
+                                    } else {
+                                        'PendingGroupSelections'
+                                    }
+                                    if ($null -eq $sync[$pendingName]) {
+                                        $sync[$pendingName] = [hashtable]::Synchronized(@{})
+                                    }
+                                    try {
+                                        # A cached baseline avoids synchronous
+                                        # registry/service/scheduler reads per click.
+                                        $actual = Get-WinUtilToggleStatus $senderControl.Name
+                                        if ($requested -eq $actual) {
+                                            $sync[$pendingName].Remove($senderControl.Name)
+                                        } else {
+                                            $sync[$pendingName][$senderControl.Name] = $requested
+                                        }
+                                    } catch {
+                                        $senderControl.Tag.Updating = $true
+                                        try { $senderControl.IsChecked = -not $requested }
+                                        finally { $senderControl.Tag.Updating = $false }
+                                        Show-WinUtilMessage -Title 'APBOptimizer' -Message "Could not stage $($senderControl.Name): $($_.Exception.Message)" -Icon 'Warning' -Button 'OK' | Out-Null
+                                        return
+                                    }
+                                }
+                                Invoke-WPFSelectedCheckboxesUpdate -type $(if ($senderControl.IsChecked) { 'Add' } else { 'Remove' }) -checkboxName $senderControl.Name
+                                Update-WinUtilServiceGroupMaster -GroupName $senderControl.Tag.Group
+                            }
+                            $childToggle.Add_Checked($onServiceChange)
+                            $childToggle.Add_Unchecked($onServiceChange)
+                        }
+
+                        $installedSearchTerms = @($entryInfo.Children | Where-Object {
+                            $sync[$_] -and $sync[$_].Visibility -eq [Windows.Visibility]::Visible
+                        } | ForEach-Object {
+                            $childDefinition = $configHashtable[$_]
+                            $systemName = if ($childDefinition.driver) { $childDefinition.driver.Name } elseif ($childDefinition.scheduledTask) { $childDefinition.scheduledTask.Name } else { $childDefinition.service[0].Name }
+                            "$_ $($childDefinition.Content) $systemName"
+                        }) -join ' '
+                        $groupWrapper.Tag = "$($entryInfo.Content) $($entryInfo.Description) $installedSearchTerms"
+
+                        if ($isDriverGroup) {
+                            $manageable = @($entryInfo.Children | Where-Object {
+                                $sync[$_] -and $sync[$_].IsEnabled -and
+                                $sync[$_].Visibility -eq [Windows.Visibility]::Visible
+                            }).Count
+                            if ($manageable -eq 0) {
+                                $isSpanish = ($sync.Language -eq 'es')
+                                # One line per non-empty category, naming the drivers.
+                                $lines = @(if ($isSpanish) { 'No hay nada que aplicar en este grupo.' } else { 'There is nothing to apply in this group.' })
+                                foreach ($category in @(
+                                    @{ Names = $driverAlreadyDisabledNames; Label = $(if ($isSpanish) { 'Ya desactivados' } else { 'Already disabled' }) },
+                                    @{ Names = $driverMissingNames; Label = $(if ($isSpanish) { 'No instalados' } else { 'Not installed' }) },
+                                    @{ Names = $driverProtectedNames; Label = $(if ($isSpanish) { 'Protegidos' } else { 'Protected' }) }
+                                )) {
+                                    if ($category.Names.Count -gt 0) {
+                                        $lines += "$($category.Label) ($($category.Names.Count)): $($category.Names -join ', ')."
+                                    }
+                                }
+                                if ($driverAlreadyDisabledNames.Count -gt 0) {
+                                    $lines += if ($isSpanish) {
+                                        "`nLos desactivó otra herramienta, una versión anterior de APBOptimizer o un cambio manual, así que no hay un modo de inicio original guardado. APBOptimizer no lo adivina y no puede reactivarlos. Para reactivar uno, usa un punto de restauración anterior al cambio o reinstala el programa que lo instaló."
+                                    } else {
+                                        "`nThey were disabled by another tool, an older APBOptimizer version or by hand, so no original startup mode was saved. APBOptimizer will not guess it and cannot re-enable them. To re-enable one, use a restore point from before the change or reinstall the program that installed it."
+                                    }
+                                }
+                                $explanation = Convert-WinUtilTextEncoding -Text ($lines -join "`n")
+                                $allAlreadyDisabled = ($driverAlreadyDisabledNames.Count -gt 0 -and $driverProtectedNames.Count -eq 0)
+                                $master.Tag.NoManageableDrivers = $true
+                                $master.Tag.AllAlreadyDisabled = $allAlreadyDisabled
+                                $master.Tag.UnavailableMessage = $explanation
+                                $master.Content = if ($allAlreadyDisabled) {
+                                    if ($isSpanish) { "$($entryInfo.Content) (ya desactivados)" } else { "$($entryInfo.Content) (already disabled)" }
+                                } elseif ($isSpanish) {
+                                    "$($entryInfo.Content) (0 disponibles)"
+                                } else {
+                                    "$($entryInfo.Content) (0 available)"
+                                }
+                                $master.ToolTip = $explanation
+                            }
+                        }
+                        Update-WinUtilServiceGroupMaster -GroupName $entryInfo.Name
+                        $master.Add_Checked({
+                            if ($this.Tag.Updating) { return }
+                            if ($this.Tag.NoManageableDrivers) {
+                                Show-WinUtilMessage -Title 'APBOptimizer - Drivers' -Message $this.Tag.UnavailableMessage -Icon 'Information' -Button 'OK' | Out-Null
+                                Update-WinUtilServiceGroupMaster -GroupName $this.Name
+                                return
+                            }
+                            $this.Tag.Updating = $true
+                            try {
+                                foreach ($childKey in @($this.Tag.Children)) {
+                                    $child = $sync[$childKey]
+                                    if ($null -ne $child -and $child.IsEnabled) { $child.IsChecked = $true }
+                                }
+                            } finally { $this.Tag.Updating = $false }
+                            Update-WinUtilServiceGroupMaster -GroupName $this.Name
+                        })
+                        $master.Add_Unchecked({
+                            if ($this.Tag.Updating) { return }
+                            if ($this.Tag.NoManageableDrivers) {
+                                Show-WinUtilMessage -Title 'APBOptimizer - Drivers' -Message $this.Tag.UnavailableMessage -Icon 'Information' -Button 'OK' | Out-Null
+                                Update-WinUtilServiceGroupMaster -GroupName $this.Name
+                                return
+                            }
+                            $this.Tag.Updating = $true
+                            try {
+                                foreach ($childKey in @($this.Tag.Children)) {
+                                    $child = $sync[$childKey]
+                                    if ($null -ne $child -and $child.IsEnabled) { $child.IsChecked = $false }
+                                }
+                            } finally { $this.Tag.Updating = $false }
+                            Update-WinUtilServiceGroupMaster -GroupName $this.Name
+                        })
+                    }
                     "Toggle" {
                         $dockPanel = New-Object Windows.Controls.DockPanel
                         [System.Windows.Automation.AutomationProperties]::SetName($dockPanel, $entryInfo.Content)
@@ -314,9 +642,18 @@ function Invoke-WPFUIElements {
 
                         foreach ($comboitem in $comboItems) {
                             $comboBoxItem = New-Object Windows.Controls.ComboBoxItem
-                            $comboBoxItem.Content = $comboitem
+                            # Keep registry/DNS identifiers as Tag; only localize the
+                            # visible labels, never the underlying system value.
+                            $comboBoxItem.Tag = $comboitem
+                            $localizedOption = if ($entryInfo.LocalizedComboItems) {
+                                $entryInfo.LocalizedComboItems.PSObject.Properties[[string]$comboitem]
+                            } else { $null }
+                            $comboBoxItem.Content = if ($localizedOption) { $localizedOption.Value } else { $comboitem }
                             if ($entryInfo.ComboDescriptions) {
                                 $comboDescription = $entryInfo.ComboDescriptions.PSObject.Properties[$comboitem].Value
+                                if ($entryInfo.LocalizedComboDescriptions -and $entryInfo.LocalizedComboDescriptions.PSObject.Properties[[string]$comboitem]) {
+                                    $comboDescription = $entryInfo.LocalizedComboDescriptions.PSObject.Properties[[string]$comboitem].Value
+                                }
                                 if ($comboDescription) {
                                     $comboBoxItem.ToolTip = $comboDescription
                                 }
@@ -332,10 +669,10 @@ function Invoke-WPFUIElements {
                         if ($entryInfo.Registry -and @($entryInfo.Registry)[0].Values) {
                             try {
                                 $comboBox.Tag.State = Get-WinUtilRegistryComboState -Registry $entryInfo.Registry
-                                $comboBox.SelectedIndex = @($comboBox.Items.Content).IndexOf([string]$comboBox.Tag.State)
+                                $comboBox.SelectedIndex = @($comboBox.Items | ForEach-Object { $_.Tag }).IndexOf([string]$comboBox.Tag.State)
                             } catch {
                                 $unknownStateItem = New-Object Windows.Controls.ComboBoxItem
-                                $unknownStateItem.Content = "Custom / Unknown - select a state"
+                                $unknownStateItem.Content = if ($sync.Language -eq 'es') { 'Personalizado / Desconocido: elige una opción' } else { 'Custom / Unknown - select a state' }
                                 $unknownStateItem.IsEnabled = $false
                                 $unknownStateItem.ToolTip = "$($_.Exception.Message) Select one of the supported states to replace these values."
                                 $comboBox.Items.Add($unknownStateItem) | Out-Null
@@ -359,12 +696,13 @@ function Invoke-WPFUIElements {
                             if ($selectedItem) {
                                 $this.Text = $selectedItem.Content
                                 $registry = $this.Tag.Registry
-                                if ($registry -and $selectedItem.IsEnabled -and $selectedItem.Content -ne $this.Tag.State) {
+                                $stateValue = [string]$selectedItem.Tag
+                                if ($registry -and $selectedItem.IsEnabled -and $stateValue -ne $this.Tag.State) {
                                     try {
-                                        Set-WinUtilRegistryComboState -Registry $registry -State $selectedItem.Content
-                                        $this.Tag.State = $selectedItem.Content
+                                        Set-WinUtilRegistryComboState -Registry $registry -State $stateValue
+                                        $this.Tag.State = $stateValue
                                         $this.ToolTip = $null
-                                        $unknownStateItem = @($this.Items) | Where-Object Content -EQ "Custom / Unknown - select a state" | Select-Object -First 1
+                                        $unknownStateItem = @($this.Items) | Where-Object { -not $_.IsEnabled } | Select-Object -First 1
                                         if ($unknownStateItem) {
                                             $this.Items.Remove($unknownStateItem)
                                         }
@@ -373,8 +711,8 @@ function Invoke-WPFUIElements {
                                         if ([string]::IsNullOrWhiteSpace($applyError)) {
                                             $applyError = "Unable to apply registry state '$($selectedItem.Content)'."
                                         }
-                                        $previousState = if ($this.Tag.State) { $this.Tag.State } else { "Custom / Unknown - select a state" }
-                                        $this.SelectedItem = @($this.Items) | Where-Object Content -EQ $previousState | Select-Object -First 1
+                                        $previousState = [string]$this.Tag.State
+                                        $this.SelectedItem = @($this.Items) | Where-Object { [string]$_.Tag -eq $previousState } | Select-Object -First 1
                                         [System.Windows.MessageBox]::Show(
                                             $applyError,
                                             "WinUtil",
@@ -386,20 +724,21 @@ function Invoke-WPFUIElements {
                             }
                         })
 
-                        if ($entryInfo.Registry -and @($entryInfo.Registry)[0].Values -and $entryInfo.Link) {
+                        if ($entryInfo.Description -or $entryInfo.Link) {
                             $textBlock = New-Object Windows.Controls.TextBlock
                             $textBlock.Name = $comboBox.Name + "Link"
                             $textBlock.Text = "(?)"
-                            $textBlock.ToolTip = $entryInfo.Link
+                            $textBlock.ToolTip = if ($sync.Language -eq 'es') { 'Ver información del ajuste' } else { 'View tweak information' }
                             $textBlock.Style = $HoverTextBlockStyle
                             $textBlock.UseLayoutRounding = $true
                             $textBlock.VerticalAlignment = "Center"
                             $textBlock.SetResourceReference([Windows.Controls.Control]::FontSizeProperty, "FontSize")
                             $textBlock.Tag = $comboBox
+                            $textBlock.Uid = $entryInfo.Name
 
                             $textBlock.Add_MouseUp({
                                 [System.Object]$Sender = $args[0]
-                                Start-Process $Sender.ToolTip -ErrorAction Stop
+                                Show-WinUtilTweakHelp -Key $Sender.Uid -Anchor $Sender
                             })
 
                             $horizontalStackPanel.Children.Add($textBlock) | Out-Null
@@ -414,7 +753,6 @@ function Invoke-WPFUIElements {
                         $button.HorizontalAlignment = "Left"
                         $button.SetResourceReference([Windows.Controls.Control]::MarginProperty, "ButtonMargin")
                         $button.SetResourceReference([Windows.Controls.Control]::FontSizeProperty, "ButtonFontSize")
-                        $button.ToolTip = $entryInfo.Description
                         if ($entryInfo.ButtonWidth) {
                             $baseWidth = [int]$entryInfo.ButtonWidth
                             $button.Width = [math]::Max($baseWidth, 350)
@@ -513,21 +851,22 @@ function Invoke-WPFUIElements {
                         }
                         $horizontalStackPanel.Children.Add($checkBox) | Out-Null
 
-                        if ($entryInfo.Link) {
+                        if ($entryInfo.Description -or $entryInfo.Link) {
                             $textBlock = New-Object Windows.Controls.TextBlock
                             $textBlock.Name = $checkBox.Name + "Link"
                             $textBlock.Text = "(?)"
-                            $textBlock.ToolTip = $entryInfo.Link
+                            $textBlock.ToolTip = if ($sync.Language -eq 'es') { 'Ver información del ajuste' } else { 'View tweak information' }
                             $textBlock.Style = $HoverTextBlockStyle
                             $textBlock.UseLayoutRounding = $true
 
                             $textBlock.VerticalAlignment = "Center"
                             $textBlock.SetResourceReference([Windows.Controls.Control]::FontSizeProperty, "FontSize")
                             $textBlock.Tag = $checkBox
+                            $textBlock.Uid = $entryInfo.Name
 
                             $textBlock.Add_MouseUp({
                                 [System.Object]$Sender = $args[0]
-                                Start-Process $Sender.ToolTip -ErrorAction Stop
+                                Show-WinUtilTweakHelp -Key $Sender.Uid -Anchor $Sender
                             })
 
                             $updateLinkMargin = {
@@ -541,11 +880,7 @@ function Invoke-WPFUIElements {
                                 )
                             }
                             $textBlock.Add_Loaded($updateLinkMargin)
-                            $fontSizeDescriptor = [System.ComponentModel.DependencyPropertyDescriptor]::FromProperty(
-                                [Windows.Controls.Control]::FontSizeProperty,
-                                [Windows.Controls.TextBlock]
-                            )
-                            $fontSizeDescriptor.AddValueChanged($textBlock, $updateLinkMargin)
+                            $linkFontSizeDescriptor.AddValueChanged($textBlock, $updateLinkMargin)
 
                             $horizontalStackPanel.Children.Add($textBlock) | Out-Null
 
@@ -567,7 +902,26 @@ function Invoke-WPFUIElements {
                     }
                 }
             }
+            if ($Yield -and -not $columnAttached) {
+                $targetGrid.Children.Add($border) | Out-Null
+                $columnAttached = $true
+                $yieldClock.Restart()
+                if (Test-WinUtilUIAlive) {
+                    $frame = [Windows.Threading.DispatcherFrame]::new()
+                    $null = $sync.Form.Dispatcher.BeginInvoke(
+                        [Windows.Threading.DispatcherPriority]::Background,
+                        [Windows.Threading.DispatcherOperationCallback]{
+                            param($dispatcherFrame)
+                            $dispatcherFrame.Continue = $false
+                            return $null
+                        },
+                        $frame)
+                    [Windows.Threading.Dispatcher]::PushFrame($frame)
+                }
+            }
         }
+        # Normal redraws attach once; the first load shows each column's first category sooner.
+        if (-not $columnAttached) { $targetGrid.Children.Add($border) | Out-Null }
     }
 
     # A search event can run inside one of the yielded dispatcher frames above. Controls added
@@ -576,7 +930,7 @@ function Invoke-WPFUIElements {
         "Tweaks" { "tweakspanel" }
         "AppX" { "appxpanel" }
     }
-    if ($filterPanel -eq $targetGridName -and $null -ne $sync.SearchBar) {
+    if ($filterPanel -eq $targetGridName -and $null -ne $sync.SearchBar -and $sync.SearchBar.Text) {
         Find-TweaksByNameOrDescription -SearchString $sync.SearchBar.Text
     }
 }

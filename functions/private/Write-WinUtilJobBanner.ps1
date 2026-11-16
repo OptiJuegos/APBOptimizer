@@ -45,10 +45,10 @@ function Write-WinUtilJobBanner {
     $border = "=" * ($longest + 6)
     $colour = if ($Level -eq "ERROR") { "Red" } else { "Cyan" }
 
-    Write-WinUtilHost ""
-    Write-WinUtilHost $border -ForegroundColor $colour
+    Write-Host ""
+    Write-Host $border -ForegroundColor $colour
     foreach ($line in $lines) {
-        Write-WinUtilHost ("-- {0}$(' ' * ($longest - $line.Length)) --" -f $line) -ForegroundColor $colour
+        Write-Host ("-- {0}$(' ' * ($longest - $line.Length)) --" -f $line) -ForegroundColor $colour
     }
-    Write-WinUtilHost $border -ForegroundColor $colour
+    Write-Host $border -ForegroundColor $colour
 }
