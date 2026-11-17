@@ -145,9 +145,10 @@
   },
   "WPFTweaksServices": {
     "Content": "Services - Set to Manual",
-    "Description": "Sets some services to Manual startup.",
+    "Description": "Sets some services to Manual startup and adjusts the SvcHostSplitThresholdInKB registry value to better match system memory, which can significantly reduce the number of svchost.exe processes.",
     "category": "Essential Tweaks",
     "panel": "1",
+    "LegacyOnly": true,
     "service": [
       {
         "Name": "CscService",
@@ -175,27 +176,665 @@
         "OriginalType": "Automatic"
       }
     ],
+    "InvokeScript": [
+      "
+      $Memory = (Get-CimInstance Win32_PhysicalMemory | Measure-Object Capacity -Sum).Sum / 1KB
+      Set-ItemProperty -Path \"HKLM:\\SYSTEM\\CurrentControlSet\\Control\" -Name SvcHostSplitThresholdInKB -Value $Memory
+      "
+    ],
     "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/services"
   },
-  "WPFTweaksSvcHostSplitting": {
-    "Content": "svchost.exe Splitting - Disable",
-    "Description": "Disables service-host splitting to reduce the number of svchost.exe processes and modestly lower memory overhead. Recommended for low-performance systems with 12 GB of RAM or less. Can interfere with Xbox services. Restart Windows after changing this setting.",
+  "WPFTweaksServicesManual": {
+    "Content": "Services - Set to Manual",
+    "Description": "Sets MapsBroker and StorSvc to Manual startup if they still have their default startup type. Also adjusts SvcHostSplitThresholdInKB based on installed RAM. Undo restores the service startup types; the svchost registry adjustment is not reverted.",
+    "category": "Essential Tweaks",
+    "panel": "1",
+    "service": [
+      { "Name": "MapsBroker", "StartupType": "Manual", "OriginalType": "Automatic" },
+      { "Name": "StorSvc", "StartupType": "Manual", "OriginalType": "Automatic" }
+    ],
+    "InvokeScript": [
+      "\n      $Memory = (Get-CimInstance Win32_PhysicalMemory | Measure-Object Capacity -Sum).Sum / 1KB\n      Set-ItemProperty -Path \"HKLM:\\SYSTEM\\CurrentControlSet\\Control\" -Name SvcHostSplitThresholdInKB -Value $Memory\n      "
+    ],
+    "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/services"
+  },
+  "WPFTweaksServicesDisabled": {
+    "Content": "Services - Disable optional services",
+    "Description": "Disables Offline Files (CscService), Windows telemetry (DiagTrack) and Internet Connection Sharing (SharedAccess) when they have their original startup type. Undo restores their configured startup types. Do not enable this if you share this PC's Internet connection or use Offline Files.",
+    "category": "Essential Tweaks",
+    "panel": "1",
+    "service": [
+      { "Name": "CscService", "StartupType": "Disabled", "OriginalType": "Manual" },
+      { "Name": "DiagTrack", "StartupType": "Disabled", "OriginalType": "Automatic" },
+      { "Name": "SharedAccess", "StartupType": "Disabled", "OriginalType": "Automatic" }
+    ],
+    "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/services"
+  },
+  "WPFServiceGroupDiagnostics": {
+    "Content": "Disable Diagnostic Services",
+    "Description": "Expand the arrow to choose Windows diagnostic and telemetry services: diagnostic hosts, Diagnostic Policy Service, DiagTrack, Error Reporting and the Diagnostics Hub collector. Marking or unmarking only prepares changes; press Apply Tweaks to disable selected services or restore unchecked services. The main checkbox selects all available services. Disabling them stops Windows troubleshooters, problem detection and error reports.",
+    "Type": "ServiceGroup",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "Children": [
+      "WPFToggleServiceWdiSystemHost",
+      "WPFToggleServiceWdiServiceHost",
+      "WPFToggleServiceDPS",
+      "WPFToggleServiceDiagTrack",
+      "WPFToggleServiceWerSvc",
+      "WPFToggleServiceDiagnosticsHub"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/iot/iot-enterprise/optimize/services"
+  },
+  "WPFServiceGroupUseless": {
+    "Content": "Disable Useless Services",
+    "Description": "Expand the arrow to choose optional Windows services. Marking or unmarking only prepares changes; press Apply Tweaks to disable selected services or restore unchecked services. The main checkbox selects all available services. Some support AutoPlay, device management or .NET networking. NetTcpPortSharing is often disabled by default; restoring it sets Manual startup.",
+    "Type": "ServiceGroup",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "Children": [
+      "WPFToggleServiceShellHWDetection",
+      "WPFToggleServiceWMPNetworkSvc",
+      "WPFToggleServicewisvc",
+      "WPFToggleServiceFontCache3000",
+      "WPFToggleServiceRetailDemo",
+      "WPFToggleServiceDmwappushservice",
+      "WPFToggleServiceWhesvc",
+      "WPFToggleServiceNetTcpPortSharing"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/iot/iot-enterprise/optimize/services"
+  },
+  "WPFDriverGroupOptional": {
+    "Content": "Disable Useless Drivers (advanced)",
+    "Description": "Optional kernel drivers, NOT a recommended preset. Marking or unmarking only queues changes until Apply Tweaks, when driver disables require confirmation. Original startup settings are backed up for Undo. Boot/System and critical drivers are locked; missing drivers are hidden. Changes take effect after reboot and may affect media, networking or power monitoring. Does not delete .sys files. UCPD.sys remains a separate advanced tweak.",
+    "Type": "DriverGroup",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "Children": [
+      "WPFToggleDriverTelemetry",
+      "WPFToggleDriverPEAUTH",
+      "WPFToggleDriverTcpipreg",
+      "WPFToggleDriverIntelPMT",
+      "WPFToggleDriverAppLockerFltr",
+      "WPFToggleDriverGpuEnergyDrv",
+      "WPFToggleDriverIObitUnlocker"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows-hardware/drivers/install/registry-trees-and-keys"
+  },
+  "WPFToggleDriverTelemetry": {
+    "Content": "Intel Telemetry driver (Telemetry / 20H2)",
+    "Description": "Optional Intel Telemetry driver on certain installations, not the Windows DiagTrack service. If its startup is already Disabled (as in some 20H2 images), APBOptimizer leaves it unchanged and cannot invent its previous state.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFDriverGroupOptional",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "driver": { "Name": "Telemetry" },
+    "InvokeScript": ["Set-WinUtilOptionalDriver -Name Telemetry -Mode Disable"],
+    "UndoScript": ["Set-WinUtilOptionalDriver -Name Telemetry -Mode Restore"]
+  },
+  "WPFToggleDriverPEAUTH": {
+    "Content": "Protected Environment Authentication (PEAUTH.sys)",
+    "Description": "Windows protected media authentication. Disabling may break DRM playback and protected media. Blocked if Boot/System/critical. Only change if you understand the side effects.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFDriverGroupOptional",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "driver": { "Name": "PEAUTH" },
+    "InvokeScript": ["Set-WinUtilOptionalDriver -Name PEAUTH -Mode Disable"],
+    "UndoScript": ["Set-WinUtilOptionalDriver -Name PEAUTH -Mode Restore"],
+    "link": "https://learn.microsoft.com/en-us/windows/win32/medfound/protected-media-path"
+  },
+  "WPFToggleDriverTcpipreg": {
+    "Content": "TCP/IP Registry Compatibility (tcpipreg.sys)",
+    "Description": "Compatibility for software that reads legacy TCP/IP settings through the registry. This is not the main TCP/IP driver, but disabling can impair older networking applications. Boot/System startup is protected.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFDriverGroupOptional",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "driver": { "Name": "tcpipreg" },
+    "InvokeScript": ["Set-WinUtilOptionalDriver -Name tcpipreg -Mode Disable"],
+    "UndoScript": ["Set-WinUtilOptionalDriver -Name tcpipreg -Mode Restore"]
+  },
+  "WPFToggleDriverIntelPMT": {
+    "Content": "Intel Platform Monitoring (IntelPMT.sys)",
+    "Description": "Intel platform telemetry used by monitoring, management and potentially power/performance software. Can affect Intel OEM and tuning functions. Not necessarily unnecessary on Intel laptops.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFDriverGroupOptional",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "driver": { "Name": "IntelPMT" },
+    "InvokeScript": ["Set-WinUtilOptionalDriver -Name IntelPMT -Mode Disable"],
+    "UndoScript": ["Set-WinUtilOptionalDriver -Name IntelPMT -Mode Restore"],
+    "link": "https://github.com/intel/Intel-PMT"
+  },
+  "WPFToggleDriverAppLockerFltr": {
+    "Content": "AppLocker Filter (AppLockerFltr.sys)",
+    "Description": "AppLocker application control filter. Disabling it can prevent AppLocker policy enforcement. Only available when installed and not protected by Boot/System startup or critical error handling. Original startup is saved for Undo; restart required.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFDriverGroupOptional",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "driver": { "Name": "AppLockerFltr" },
+    "InvokeScript": ["Set-WinUtilOptionalDriver -Name AppLockerFltr -Mode Disable"],
+    "UndoScript": ["Set-WinUtilOptionalDriver -Name AppLockerFltr -Mode Restore"]
+  },
+  "WPFToggleDriverGpuEnergyDrv": {
+    "Content": "GPU Energy Kernel Driver (GpuEnergyDrv.sys)",
+    "Description": "Windows GPU energy monitoring. Disabling may affect power telemetry and laptop efficiency. Separate from the graphics driver and not already present in this APBOptimizer catalog.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFDriverGroupOptional",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "driver": { "Name": "GpuEnergyDrv" },
+    "InvokeScript": ["Set-WinUtilOptionalDriver -Name GpuEnergyDrv -Mode Disable"],
+    "UndoScript": ["Set-WinUtilOptionalDriver -Name GpuEnergyDrv -Mode Restore"]
+  },
+  "WPFToggleDriverIObitUnlocker": {
+    "Content": "IObit Unlocker driver (IObitUnlocker.sys)",
+    "Description": "Third-party IObit Unlocker driver. If you use its locked-file functions, disabling the driver can break them. Prefer uninstalling the unused application. Only available if the exact IObitUnlocker driver service exists.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFDriverGroupOptional",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "driver": { "Name": "IObitUnlocker" },
+    "InvokeScript": ["Set-WinUtilOptionalDriver -Name IObitUnlocker -Mode Disable"],
+    "UndoScript": ["Set-WinUtilOptionalDriver -Name IObitUnlocker -Mode Restore"]
+  },
+  "WPFTweaksDisableUCPD": {
+    "Content": "UCPD.sys and UCPD velocity - Disable",
+    "Description": "Separate advanced tweak for the UserChoice Protection Driver. Protects browser/PDF default associations against unauthorized changes. Applying saves the original UCPD startup type and UCPD velocity scheduled-task state, then disables their next-boot startup. Undo restores both previous states. The task is disabled, not deleted. A reboot is required. Windows updates may reactivate the driver.",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "driver": { "Name": "UCPD" },
+    "InvokeScript": ["Set-WinUtilOptionalDriver -Name UCPD -Mode Disable"],
+    "UndoScript": ["Set-WinUtilOptionalDriver -Name UCPD -Mode Restore"],
+    "link": "https://www.elevenforum.com/t/enable-or-disable-userchoice-protection-driver-ucpd-in-windows-11-and-10.24267/"
+  },
+  "WPFToggleServiceWdiSystemHost": {
+    "Content": "Diagnostic System Host (WdiSystemHost)",
+    "Description": "Used by Windows Diagnostic Policy Service for system-level troubleshooting. Disabling it prevents some diagnostics from running. Undo restores Manual startup.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupDiagnostics",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "WdiSystemHost", "StartupType": "Disabled", "OriginalType": "Manual", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name WdiSystemHost -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name WdiSystemHost -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/iot/iot-enterprise/optimize/services"
+  },
+  "WPFToggleServiceWdiServiceHost": {
+    "Content": "Diagnostic Service Host (WdiServiceHost)",
+    "Description": "Hosts diagnostics in the Local Service context. Disabling it prevents dependent troubleshooting from working. Undo restores Manual startup.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupDiagnostics",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "WdiServiceHost", "StartupType": "Disabled", "OriginalType": "Manual", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name WdiServiceHost -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name WdiServiceHost -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/iot/iot-enterprise/optimize/services"
+  },
+  "WPFToggleServiceDiagTrack": {
+    "Content": "Connected User Experiences (DiagTrack)",
+    "Description": "Windows diagnostics and telemetry service. May already be disabled by Telemetry - Disable; Undo restores Automatic startup.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupDiagnostics",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "DiagTrack", "StartupType": "Disabled", "OriginalType": "Automatic", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name DiagTrack -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name DiagTrack -ErrorAction Stop }"
+    ],
+    "UndoScript": [
+      "if ((Get-Service -Name DiagTrack -ErrorAction Stop).Status -ne 'Running') { Start-Service -Name DiagTrack -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/iot/iot-enterprise/optimize/services"
+  },
+  "WPFToggleServiceShellHWDetection": {
+    "Content": "Shell Hardware Detection (ShellHWDetection)",
+    "Description": "Provides AutoPlay notifications when media or devices are connected. Disabling removes those notifications and can affect device-related features. Undo restores Automatic startup.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupUseless",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "ShellHWDetection", "StartupType": "Disabled", "OriginalType": "Automatic", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name ShellHWDetection -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name ShellHWDetection -ErrorAction Stop }"
+    ],
+    "UndoScript": [
+      "if ((Get-Service -Name ShellHWDetection -ErrorAction Stop).Status -ne 'Running') { Start-Service -Name ShellHWDetection -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/iot/iot-enterprise/optimize/services"
+  },
+  "WPFToggleServiceDPS": {
+    "Content": "Diagnostic Policy Service (DPS)",
+    "Description": "Required for Windows problem detection and troubleshooting. Microsoft recommends keeping it enabled. Disabling can break diagnostics; Undo restores Automatic startup.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupDiagnostics",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "DPS", "StartupType": "Disabled", "OriginalType": "Automatic", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name DPS -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name DPS -ErrorAction Stop }"
+    ],
+    "UndoScript": [
+      "if ((Get-Service -Name DPS -ErrorAction Stop).Status -ne 'Running') { Start-Service -Name DPS -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/iot/iot-enterprise/optimize/services"
+  },
+  "WPFToggleServiceWMPNetworkSvc": {
+    "Content": "Media Player Network Sharing (WMPNetworkSvc)",
+    "Description": "Shares Windows Media Player libraries with networked players and devices. Disabling removes that sharing. Undo restores Manual startup; this service may not exist on some Windows installations.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupUseless",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "WMPNetworkSvc", "StartupType": "Disabled", "OriginalType": "Manual", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name WMPNetworkSvc -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name WMPNetworkSvc -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/iot/iot-enterprise/optimize/services"
+  },
+  "WPFToggleServicewisvc": {
+    "Content": "Windows Insider Service (wisvc)",
+    "Description": "Used by the Windows Insider Program for preview builds. Disabling can interfere with Insider functionality. Undo restores Manual startup; the service may be absent.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupUseless",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "wisvc", "StartupType": "Disabled", "OriginalType": "Manual", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name wisvc -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name wisvc -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/iot/iot-enterprise/optimize/services"
+  },
+  "WPFToggleServiceWerSvc": {
+    "Content": "Windows Error Reporting (WerSvc)",
+    "Description": "Collects and reports Windows application and system failures. Disabling can reduce error reporting and diagnostic information. Undo restores Manual startup.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupDiagnostics",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "WerSvc", "StartupType": "Disabled", "OriginalType": "Manual", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name WerSvc -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name WerSvc -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/iot/iot-enterprise/optimize/services"
+  },
+  "WPFToggleServiceFontCache3000": {
+    "Content": "WPF Font Cache (FontCache3.0.0.0)",
+    "Description": "Caches fonts for older Windows Presentation Foundation applications. Disabling may slow some .NET/WPF applications; often absent on newer Windows. Undo restores Manual startup.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupUseless",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "FontCache3.0.0.0", "StartupType": "Disabled", "OriginalType": "Manual", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name 'FontCache3.0.0.0' -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name 'FontCache3.0.0.0' -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/iot/iot-enterprise/optimize/services"
+  },
+  "WPFToggleServiceRetailDemo": {
+    "Content": "Retail Demo Service (RetailDemo)",
+    "Description": "Used to display retail demonstration experiences on store devices. Disabling prevents retail demo functionality. Undo restores Manual startup.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupUseless",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "RetailDemo", "StartupType": "Disabled", "OriginalType": "Manual", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name RetailDemo -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name RetailDemo -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows-hardware/customize/desktop/retail-demo-experience"
+  },
+  "WPFToggleServiceDiagnosticsHub": {
+    "Content": "Diagnostics Hub Collector (diagnosticshub.standardcollector.service)",
+    "Description": "Collects Event Tracing for Windows (ETW) events for diagnostic and development tools. Disabling can interfere with diagnostic traces and profiling. Undo restores Manual startup.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupDiagnostics",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "diagnosticshub.standardcollector.service", "StartupType": "Disabled", "OriginalType": "Manual", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name 'diagnosticshub.standardcollector.service' -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name 'diagnosticshub.standardcollector.service' -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows-server/security/windows-services/security-guidelines-for-disabling-system-services-in-windows-server"
+  },
+  "WPFToggleServiceDmwappushservice": {
+    "Content": "Device Management WAP Push (dmwappushservice)",
+    "Description": "Routes device management push messages. Disabling can interrupt MDM/Intune management and device enrollment. Undo restores Manual startup.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupUseless",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "dmwappushservice", "StartupType": "Disabled", "OriginalType": "Manual", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name dmwappushservice -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name dmwappushservice -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows-server/security/windows-services/security-guidelines-for-disabling-system-services-in-windows-server"
+  },
+  "WPFToggleServiceWhesvc": {
+    "Content": "Windows Health and Optimized Experiences (whesvc)",
+    "Description": "Monitors device health for optimized Windows experiences. Disabling may affect device health and optimization features; it is not present on every Windows version. Undo restores Automatic startup and starts the service.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupUseless",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "whesvc", "StartupType": "Disabled", "OriginalType": "Automatic", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name whesvc -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name whesvc -ErrorAction Stop }"
+    ],
+    "UndoScript": [
+      "if ((Get-Service -Name whesvc -ErrorAction Stop).Status -ne 'Running') { Start-Service -Name whesvc -ErrorAction Stop }"
+    ]
+  },
+  "WPFToggleServiceNetTcpPortSharing": {
+    "Content": "Net.TCP Port Sharing (NetTcpPortSharing)",
+    "Description": "Allows Windows Communication Foundation applications to share TCP ports. This service is disabled on Windows by default; if already disabled, its checkbox starts checked. Unchecking sets Manual startup without starting it (required when using WCF port sharing).",
+    "Type": "Toggle",
+    "ParentGroup": "WPFServiceGroupUseless",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "service": [
+      { "Name": "NetTcpPortSharing", "StartupType": "Disabled", "OriginalType": "Manual", "ForceStartup": true }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name NetTcpPortSharing -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name NetTcpPortSharing -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/dotnet/framework/wcf/feature-details/how-to-enable-the-net-tcp-port-sharing-service"
+  },
+  "WPFTweaksDisableWindowsSearch": {
+    "Content": "Windows Search Indexing - Disable",
+    "Description": "Stops the Windows Search (WSearch) service and disables its startup. This reduces background indexing, but can slow or break file, Start menu and Outlook searches. Undo restores Automatic (Delayed Start) and starts the service.",
+    "category": "Essential Tweaks",
+    "panel": "1",
+    "service": [
+      {
+        "Name": "WSearch",
+        "StartupType": "Disabled",
+        "OriginalType": "AutomaticDelayedStart",
+        "ForceStartup": true
+      }
+    ],
+    "InvokeScript": [
+      "if ((Get-Service -Name WSearch -ErrorAction Stop).Status -ne 'Stopped') { Stop-Service -Name WSearch -ErrorAction Stop }"
+    ],
+    "UndoScript": [
+      "if ((Get-Service -Name WSearch -ErrorAction Stop).Status -ne 'Running') { Start-Service -Name WSearch -ErrorAction Stop }"
+    ],
+    "link": "https://learn.microsoft.com/en-us/troubleshoot/windows-client/shell-experience/windows-search-performance-issues"
+  },
+  "WPFTweaksDisableSearchWebView2": {
+    "Content": "Start Search WebView2 Processes - Disable [restart required]",
+    "Description": "Stops SearchHost.exe from keeping msedgewebview2.exe processes running in the background. Writes the same feature override as 'vivetool /disable /id:37926450' (SearchWebView2) directly to the registry, without running ViVeTool. Also turns off the new Start menu search interface. Microsoft can rename or remove this feature in an update, and then the override has no effect. Requires a restart. Undo removes the override.",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "registry": [
+      { "Path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "Name": "EnabledState", "Value": "1", "Type": "DWord", "OriginalValue": "<RemoveEntry>" },
+      { "Path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "Name": "EnabledStateOptions", "Value": "0", "Type": "DWord", "OriginalValue": "<RemoveEntry>" },
+      { "Path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "Name": "Variant", "Value": "0", "Type": "DWord", "OriginalValue": "<RemoveEntry>" },
+      { "Path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "Name": "VariantPayload", "Value": "0", "Type": "DWord", "OriginalValue": "<RemoveEntry>" },
+      { "Path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260", "Name": "VariantPayloadKind", "Value": "0", "Type": "DWord", "OriginalValue": "<RemoveEntry>" }
+    ],
+    "UndoScript": [
+      "# ViVeTool /reset deletes the whole override key; remove it once its values are gone.\n      $overrideKey = 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\FeatureManagement\\Overrides\\8\\1694661260'\n      if ((Test-Path -LiteralPath $overrideKey) -and @((Get-Item -LiteralPath $overrideKey).GetValueNames()).Count -eq 0) { Remove-Item -LiteralPath $overrideKey -ErrorAction Stop }"
+    ],
+    "link": "https://github.com/thebookisclosed/ViVe"
+  },
+  "WPFTweaksDisableEdgeBackground": {
+    "Content": "Microsoft Edge Background Processes - Disable",
+    "Description": "Disables Edge background mode and startup boost using Microsoft Edge policies. Does not remove Edge or the WebView2 runtime used by Teams and other apps. Undo removes both policy overrides.",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "registry": [
+      { "Path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge", "Name": "BackgroundModeEnabled", "Value": "0", "Type": "DWord", "OriginalValue": "<RemoveEntry>" },
+      { "Path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge", "Name": "StartupBoostEnabled", "Value": "0", "Type": "DWord", "OriginalValue": "<RemoveEntry>" }
+    ],
+    "link": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies/backgroundmodeenabled"
+  },
+  "WPFTaskGroupTelemetry": {
+    "Content": "Disable Optional Scheduled Tasks",
+    "Description": "Choose optional telemetry, compatibility, Windows Media Sharing and Firefox tasks in the dropdown. Marking or unmarking only stages changes; click Apply Tweaks to disable selected tasks or restore unchecked tasks previously managed by APBOptimizer. The master checkbox selects all manageable tasks. Missing tasks are hidden, and tasks disabled outside APBOptimizer are protected. Each task has an independent backup for Undo.",
+    "Type": "TaskGroup",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "Children": [
+      "WPFToggleTaskCompatibilityAppraiser",
+      "WPFToggleTaskProgramDataUpdater",
+      "WPFToggleTaskConsolidator",
+      "WPFToggleTaskUsbCeip",
+      "WPFToggleTaskKernelCeip",
+      "WPFToggleTaskCompatibilityAppraiserExp",
+      "WPFToggleTaskWindowsMediaSharing",
+      "WPFToggleTaskUsageDataReporting",
+      "WPFToggleTaskSustainabilityTelemetry",
+      "WPFToggleTaskFirefoxDefaultBrowserAgent"
+    ],
+    "link": "https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/disable-scheduledtask"
+  },
+  "WPFToggleTaskCompatibilityAppraiser": {
+    "Content": "Microsoft Compatibility Appraiser",
+    "Description": "Collects application and device compatibility information. Disabling it can affect upgrade compatibility assessments. Undo restores the previously enabled state.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFTaskGroupTelemetry",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "scheduledTask": { "Name": "Microsoft Compatibility Appraiser" },
+    "InvokeScript": ["Set-WinUtilTelemetryTask -Name 'Microsoft Compatibility Appraiser' -Mode Disable"],
+    "UndoScript": ["Set-WinUtilTelemetryTask -Name 'Microsoft Compatibility Appraiser' -Mode Restore"],
+    "link": "https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/disable-scheduledtask"
+  },
+  "WPFToggleTaskProgramDataUpdater": {
+    "Content": "ProgramDataUpdater",
+    "Description": "Updates program inventory data for application compatibility and diagnostics. Undo restores its original state.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFTaskGroupTelemetry",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "scheduledTask": { "Name": "ProgramDataUpdater" },
+    "InvokeScript": ["Set-WinUtilTelemetryTask -Name ProgramDataUpdater -Mode Disable"],
+    "UndoScript": ["Set-WinUtilTelemetryTask -Name ProgramDataUpdater -Mode Restore"],
+    "link": "https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/disable-scheduledtask"
+  },
+  "WPFToggleTaskConsolidator": {
+    "Content": "Consolidator (CEIP)",
+    "Description": "Runs the Customer Experience Improvement Program data consolidation task. Undo restores its original state.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFTaskGroupTelemetry",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "scheduledTask": { "Name": "Consolidator" },
+    "InvokeScript": ["Set-WinUtilTelemetryTask -Name Consolidator -Mode Disable"],
+    "UndoScript": ["Set-WinUtilTelemetryTask -Name Consolidator -Mode Restore"],
+    "link": "https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/disable-scheduledtask"
+  },
+  "WPFToggleTaskUsbCeip": {
+    "Content": "UsbCeip (CEIP USB)",
+    "Description": "Collects optional USB device usage diagnostics. Undo restores its original state.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFTaskGroupTelemetry",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "scheduledTask": { "Name": "UsbCeip" },
+    "InvokeScript": ["Set-WinUtilTelemetryTask -Name UsbCeip -Mode Disable"],
+    "UndoScript": ["Set-WinUtilTelemetryTask -Name UsbCeip -Mode Restore"],
+    "link": "https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/disable-scheduledtask"
+  },
+  "WPFToggleTaskKernelCeip": {
+    "Content": "KernelCeipTask (CEIP kernel)",
+    "Description": "Collects optional Windows kernel experience data. Undo restores its original state.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFTaskGroupTelemetry",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "scheduledTask": { "Name": "KernelCeipTask" },
+    "InvokeScript": ["Set-WinUtilTelemetryTask -Name KernelCeipTask -Mode Disable"],
+    "UndoScript": ["Set-WinUtilTelemetryTask -Name KernelCeipTask -Mode Restore"],
+    "link": "https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/disable-scheduledtask"
+  },
+  "WPFToggleTaskCompatibilityAppraiserExp": {
+    "Content": "Microsoft Compatibility Appraiser Exp",
+    "Description": "Additional app compatibility telemetry task found on newer Windows installations. Disabling it may affect Windows upgrade compatibility assessments. Undo restores its previous state.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFTaskGroupTelemetry",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "scheduledTask": { "Name": "Microsoft Compatibility Appraiser Exp" },
+    "InvokeScript": ["Set-WinUtilTelemetryTask -Name 'Microsoft Compatibility Appraiser Exp' -Mode Disable"],
+    "UndoScript": ["Set-WinUtilTelemetryTask -Name 'Microsoft Compatibility Appraiser Exp' -Mode Restore"],
+    "link": "https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/disable-scheduledtask"
+  },
+  "WPFToggleTaskWindowsMediaSharing": {
+    "Content": "Windows Media Sharing - UpdateLibrary",
+    "Description": "Updates the Windows Media Player network-sharing library. Optional when you do not share media to devices on the local network; disabling may affect media library updates.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFTaskGroupTelemetry",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "scheduledTask": { "Name": "UpdateLibrary" },
+    "InvokeScript": ["Set-WinUtilTelemetryTask -Name UpdateLibrary -Mode Disable"],
+    "UndoScript": ["Set-WinUtilTelemetryTask -Name UpdateLibrary -Mode Restore"],
+    "link": "https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/disable-scheduledtask"
+  },
+  "WPFToggleTaskUsageDataReporting": {
+    "Content": "Flighting - UsageDataReporting",
+    "Description": "Reports Windows FeatureConfig usage data. Disabling may affect feature usage reporting or internal feature configuration. Undo restores the previous state.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFTaskGroupTelemetry",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "scheduledTask": { "Name": "UsageDataReporting" },
+    "InvokeScript": ["Set-WinUtilTelemetryTask -Name UsageDataReporting -Mode Disable"],
+    "UndoScript": ["Set-WinUtilTelemetryTask -Name UsageDataReporting -Mode Restore"],
+    "link": "https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/disable-scheduledtask"
+  },
+  "WPFToggleTaskSustainabilityTelemetry": {
+    "Content": "SustainabilityTelemetry",
+    "Description": "Reports Windows sustainability-related telemetry. Disabling may stop sustainability data collection. Does not disable PowerGridForecastTask.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFTaskGroupTelemetry",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "scheduledTask": { "Name": "SustainabilityTelemetry" },
+    "InvokeScript": ["Set-WinUtilTelemetryTask -Name SustainabilityTelemetry -Mode Disable"],
+    "UndoScript": ["Set-WinUtilTelemetryTask -Name SustainabilityTelemetry -Mode Restore"],
+    "link": "https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/disable-scheduledtask"
+  },
+  "WPFToggleTaskFirefoxDefaultBrowserAgent": {
+    "Content": "Firefox Default Browser Agent",
+    "Description": "Optional Firefox task that checks default-browser changes. Matches only Mozilla's Firefox Default Browser Agent task(s) with a hexadecimal identifier; exact original states are saved for Undo. It does not disable Firefox updates.",
+    "Type": "Toggle",
+    "ParentGroup": "WPFTaskGroupTelemetry",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "scheduledTask": { "Name": "Firefox Default Browser Agent" },
+    "InvokeScript": ["Set-WinUtilTelemetryTask -Name 'Firefox Default Browser Agent' -Mode Disable"],
+    "UndoScript": ["Set-WinUtilTelemetryTask -Name 'Firefox Default Browser Agent' -Mode Restore"],
+    "link": "https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/disable-scheduledtask"
+  },
+  "WPFTweaksDisableTelemetryTasks": {
+    "Content": "Optional Telemetry Scheduled Tasks - Legacy",
+    "Description": "Compatibility-only entry for older saved APBOptimizer configurations. The visible TaskGroup replaces this checkbox.",
+    "ParentGroup": "WPFTaskGroupTelemetry",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "ScheduledTaskCleanup": true,
+    "InvokeScript": ["Set-WinUtilTelemetryTasks -Mode Disable"],
+    "UndoScript": ["Set-WinUtilTelemetryTasks -Mode Restore"],
+    "link": "https://learn.microsoft.com/en-us/powershell/module/scheduledtasks/disable-scheduledtask"
+  },
+  "WPFTweaksPauseWindows2099": {
+    "Content": "Windows Update - Pause until 2099 (experimental)",
+    "Description": "Experimental registry-only pause through August 17, 2099. Microsoft officially supports pauses of up to 35 days, so this date may be ignored or reset. It is recommended to pause updates for 7 days in Windows Settings first, but this is not required. Applying saves the previous registry values; Undo restores them. It does not disable Windows services, scheduled tasks or rename protected DLLs. Blocks security updates if Windows honors the pause.",
     "category": "z__Advanced Tweaks - CAUTION",
     "panel": "1",
     "InvokeScript": [
-      "
-      # A threshold above the physical memory disables svchost service splitting
-      $Memory = (Get-CimInstance Win32_PhysicalMemory | Measure-Object Capacity -Sum).Sum / 1KB
-      Set-ItemProperty -Path \"HKLM:\\SYSTEM\\CurrentControlSet\\Control\" -Name SvcHostSplitThresholdInKB -Value $Memory -Type DWord
-      "
+      "Set-WinUtilWindowsPause -Mode Pause"
     ],
     "UndoScript": [
-      "
-      # Windows client default (0x380000): splitting back on
-      Set-ItemProperty -Path \"HKLM:\\SYSTEM\\CurrentControlSet\\Control\" -Name SvcHostSplitThresholdInKB -Value 3670016 -Type DWord -Force
-      "
+      "Set-WinUtilWindowsPause -Mode Restore"
     ],
-    "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/svchostsplitting"
+    "link": "https://support.microsoft.com/windows/manage-updates-in-windows"
+  },
+  "WPFTweaksDisableMemoryIntegrity": {
+    "Content": "Memory Integrity (HVCI) - Disable [restart required]",
+    "Description": "Advanced Windows 10/11 option. Disables Memory integrity (HVCI) by setting the DeviceGuard HypervisorEnforcedCodeIntegrity Enabled DWORD to 0, reducing protection against kernel malware. Requires administrator rights and a restart. It does NOT turn off all VBS, Credential Guard or the hypervisor. Policy-managed or UEFI-locked settings are protected; Windows may ignore or override registry changes. The original registry value (including an absent value) is backed up before applying and restored with Undo Selected Tweaks. Use Windows Security > Device security > Core isolation for the recommended manual method. Performance gains vary by hardware and game; none are guaranteed.",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "InvokeScript": [
+      "Set-WinUtilMemoryIntegrity -Mode Disable"
+    ],
+    "UndoScript": [
+      "Set-WinUtilMemoryIntegrity -Mode Restore"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/security/hardware-security/enable-virtualization-based-protection-of-code-integrity"
+  },
+  "WPFTweaksDisablePowerThrottling": {
+    "Content": "Power Throttling - Disable [restart recommended]",
+    "Description": "Windows 10/11 power-management option. Sets HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power\\PowerThrottling\\PowerThrottlingOff (REG_DWORD) to 1 to turn off Windows process power throttling. It can help workloads that Windows throttles in the background, but usually does not improve foreground game FPS. Disabling energy-saving behavior may increase battery drain, power draw, temperature and fan noise. Requires administrator rights; a restart is recommended. Does not change the power plan, CPU limits or other power settings. Saves the exact original DWORD (including when absent) so Undo Selected Tweaks can restore it. A managed Windows policy may reapply this setting.",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "InvokeScript": [
+      "Set-WinUtilPowerThrottling -Mode Disable"
+    ],
+    "UndoScript": [
+      "Set-WinUtilPowerThrottling -Mode Restore"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-admx-power#powerthrottlingturnoff"
+  },
+  "WPFTweaksDisableDevicePowerSaving": {
+    "Content": "USB Selective Suspend & PCIe Link State - Disable",
+    "Description": "Windows 10/11 power plan option. Uses powercfg to set USB selective suspend and PCI Express Link State Power Management (ASPM) to Off for the plugged-in (AC) setting of the active power plan, then reactivates the plan. It can reduce USB mouse, controller or audio dropouts and PCIe wake-up latency; performance gains are not guaranteed. Battery (DC) values and other power plans are not changed. Power draw and idle temperature may increase slightly. Requires administrator rights; no restart needed. Saves the original AC values and the plan GUID so Undo Selected Tweaks can restore them.",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "InvokeScript": [
+      "Set-WinUtilDevicePowerSaving -Mode Disable"
+    ],
+    "UndoScript": [
+      "Set-WinUtilDevicePowerSaving -Mode Restore"
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows-hardware/customize/power-settings/usb-settings-usb-selective-suspend-setting"
+  },
+  "WPFTweaksDisableCPUMitigations": {
+    "Content": "CPU Mitigations (Spectre/Meltdown) - Disable [restart required]",
+    "Description": "Advanced opt-in security setting for Windows 10/11. Follows shoober420/CPU_Mitigations.bat and Microsoft KB4073119: writes FeatureSettingsOverride=3 and FeatureSettingsOverrideMask=3 (REG_DWORD) under HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Memory Management. Disables operating-system speculative-execution mitigations including Spectre Variant 2 and Meltdown; other CPU, firmware and Windows protections are outside its scope. It substantially reduces security, especially on computers with untrusted applications or websites. Performance gains depend on CPU and workload and are not guaranteed. Requires administrator permissions and reboot. Saves both original registry values, including absent ones, so Undo Selected Tweaks can restore them. No third-party EXE or BAT is executed.",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "InvokeScript": [
+      "Set-WinUtilCPUMitigations -Mode Disable"
+    ],
+    "UndoScript": [
+      "Set-WinUtilCPUMitigations -Mode Restore"
+    ],
+    "link": "https://support.microsoft.com/en-us/topic/kb4073119-windows-client-guidance-for-it-pros-to-protect-against-silicon-based-microarchitectural-and-speculative-execution-side-channel-vulnerabilities-35820a8a-ae13-1299-88cc-357f104f5b11"
   },
   "WPFTweaksBraveDebloat": {
     "Content": "Brave Browser - Debloat",
@@ -462,18 +1101,6 @@
     "Description": "Disables Microsoft Telemetry.",
     "category": "Essential Tweaks",
     "panel": "1",
-    "service": [
-      {
-        "Name": "diagtrack",
-        "StartupType": "Disabled",
-        "OriginalType": "Automatic"
-      },
-      {
-        "Name": "WerSvc",
-        "StartupType": "Disabled",
-        "OriginalType": "Manual"
-      }
-    ],
     "registry": [
       {
         "Path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo",
@@ -558,46 +1185,35 @@
         "Value": "0",
         "Type": "DWord",
         "OriginalValue": "<RemoveEntry>"
-      },
-      {
-        "Path": "HKCU:\\Software\\Microsoft\\Siuf\\Rules",
-        "Name": "PeriodInNanoSeconds",
-        "Value": "<RemoveEntry>",
-        "Type": "QWord",
-        "OriginalValue": "<RemoveEntry>"
       }
     ],
     "InvokeScript": [
       "
-      # Disable Defender Auto Sample Submission
-      try {
-          Set-MpPreference -SubmitSamplesConsent 2 -ErrorAction Stop
-      } catch {
-          # Skip Defender error 0x800106ba when its service is unavailable; other errors must fail.
-          if ($_.Exception.Message -notmatch '\\b0x800106ba\\b' -and $_.Exception.HResult -ne 0x800106BA) {
-              throw
-          }
-          Write-Warning 'Defender sample submission preference could not be changed; Defender may be unavailable or disabled.'
-          Write-WinUtilLog -Level 'WARN' -Component 'Script' -Message 'Defender sample submission preference could not be changed; Defender may be unavailable or disabled.'
-      }
+      # Disable Defender Auto Sample Submission (skipped when Defender is not installed)
+      if (Get-Command Set-MpPreference -ErrorAction SilentlyContinue) { Set-MpPreference -SubmitSamplesConsent 2 }
+
+      # Disable (Connected User Experiences and Telemetry) Service
+      Set-Service -Name diagtrack -StartupType Disabled
+
+      # Disable (Windows Error Reporting Manager) Service; most Windows builds do not have it
+      if (Get-Service -Name wermgr -ErrorAction SilentlyContinue) { Set-Service -Name wermgr -StartupType Disabled }
 
       # Disable PowerShell 7 telemetry
       [Environment]::SetEnvironmentVariable('POWERSHELL_TELEMETRY_OPTOUT', '1', 'Machine')
+
+      Remove-ItemProperty -Path \"HKCU:\\Software\\Microsoft\\Siuf\\Rules\" -Name PeriodInNanoSeconds -ErrorAction SilentlyContinue
       "
     ],
     "UndoScript": [
       "
-      # Enable Defender Auto Sample Submission
-      try {
-          Set-MpPreference -SubmitSamplesConsent 1 -ErrorAction Stop
-      } catch {
-          # Skip Defender error 0x800106ba when its service is unavailable; other errors must fail.
-          if ($_.Exception.Message -notmatch '\\b0x800106ba\\b' -and $_.Exception.HResult -ne 0x800106BA) {
-              throw
-          }
-          Write-Warning 'Defender sample submission preference could not be restored; Defender may be unavailable or disabled.'
-          Write-WinUtilLog -Level 'WARN' -Component 'Script' -Message 'Defender sample submission preference could not be restored; Defender may be unavailable or disabled.'
-      }
+      # Enable Defender Auto Sample Submission (skipped when Defender is not installed)
+      if (Get-Command Set-MpPreference -ErrorAction SilentlyContinue) { Set-MpPreference -SubmitSamplesConsent 1 }
+
+      # Enable (Connected User Experiences and Telemetry) Service
+      Set-Service -Name diagtrack -StartupType Automatic
+
+      # Enable (Windows Error Reporting Manager) Service; most Windows builds do not have it
+      if (Get-Service -Name wermgr -ErrorAction SilentlyContinue) { Set-Service -Name wermgr -StartupType Automatic }
 
       # Enable PowerShell 7 telemetry
       [Environment]::SetEnvironmentVariable('POWERSHELL_TELEMETRY_OPTOUT', '', 'Machine')
@@ -628,16 +1244,9 @@
     "panel": "1",
     "InvokeScript": [
       "
-      $EdgeAppDir = \"$Env:ProgramFiles (x86)\\Microsoft\\Edge\\Application\"
-      $Path = $null
-      if (Test-Path -LiteralPath $EdgeAppDir -ErrorAction Stop) {
-          $InstallerPattern = Join-Path $EdgeAppDir \"*\\Installer\\setup.exe\"
-          if (Test-Path -Path $InstallerPattern -ErrorAction Stop) {
-              $Path = Resolve-Path -Path $InstallerPattern -ErrorAction Stop | Select-Object -Last 1
-          }
-      }
+      $Path = Resolve-Path -Path \"$Env:ProgramFiles (x86)\\Microsoft\\Edge\\Application\\*\\Installer\\setup.exe\" | Select-Object -Last 1
 
-      if ($Path) {
+      if (Test-Path $Path) {
           New-Item -Path \"$Env:SystemRoot\\SystemApps\\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\\MicrosoftEdge.exe\" -Force
           Start-Process -FilePath $Path -ArgumentList \"--uninstall --system-level --force-uninstall --delete-profile\" -Wait
           Write-Host \"Microsoft Edge was removed\"
@@ -660,15 +1269,7 @@
     "category": "Essential Tweaks",
     "panel": "1",
     "InvokeScript": [
-      "
-      $bitLockerVolume = Get-BitLockerVolume -MountPoint $Env:SystemDrive -ErrorAction Stop
-
-      if ($bitLockerVolume.VolumeStatus -eq 'FullyDecrypted') {
-          Write-Host \"BitLocker is already disabled on $($Env:SystemDrive).\"
-      } else {
-          Disable-BitLocker -MountPoint $Env:SystemDrive -ErrorAction Stop
-      }
-      "
+      "Disable-BitLocker -MountPoint $Env:SystemDrive"
     ],
     "UndoScript": [
       "Enable-BitLocker -MountPoint $Env:SystemDrive"
@@ -698,55 +1299,30 @@
     "panel": "1",
     "InvokeScript": [
       "
-      $OneDrivePath = $Env:OneDrive
-      $OneDriveFolderExists = -not [string]::IsNullOrWhiteSpace($OneDrivePath) -and (Test-Path -LiteralPath $OneDrivePath -PathType Container -ErrorAction Stop)
+      # Deny permission to remove OneDrive folder
+      icacls $Env:OneDrive /deny \"*S-1-5-32-544:(D,DC)\"
 
-      if ($OneDriveFolderExists) {
-          $OneDriveAcl = Get-Acl -LiteralPath $OneDrivePath -ErrorAction Stop
-      } else {
-          Write-Host \"OneDrive folder is already absent; skipping folder permissions and cleanup.\"
-      }
+      Write-Host \"Uninstalling OneDrive...\"
+      Start-Process -FilePath (Join-Path $Env:SystemRoot \"System32\\OneDriveSetup.exe\") -ArgumentList '/uninstall' -Wait
 
-      try {
-          if ($OneDriveFolderExists) {
-              # Protect user files while the uninstaller runs.
-              icacls $OneDrivePath /deny \"*S-1-5-32-544:(D,DC)\"
-              if ($LASTEXITCODE -ne 0) { throw \"Unable to protect the OneDrive folder (icacls exit code $LASTEXITCODE).\" }
-          }
+      # Some of OneDrive files use explorer, and OneDrive uses FileCoAuth
+      Write-Host \"Removing leftover OneDrive Files...\"
 
-          Write-Host \"Uninstalling OneDrive...\"
-          Start-Process -FilePath (Join-Path $Env:SystemRoot \"System32\\OneDriveSetup.exe\") -ArgumentList '/uninstall' -Wait -ErrorAction Stop
+      Stop-Process -Name FileCoAuth,Explorer
 
-          # Some of OneDrive files use explorer, and OneDrive uses FileCoAuth
-          Write-Host \"Removing leftover OneDrive Files...\"
+      Remove-Item \"$Env:LocalAppData\\Microsoft\\OneDrive\" -Recurse -Force
+      Remove-Item \"$Env:ProgramData\\Microsoft OneDrive\" -Recurse -Force
 
-          Get-Process -ErrorAction Stop | Where-Object ProcessName -eq 'FileCoAuth' | Stop-Process -ErrorAction Stop
-          Get-Process -ErrorAction Stop | Where-Object ProcessName -eq 'Explorer' | Stop-Process -ErrorAction Stop
+      # Grant back permission to access OneDrive folder
+      icacls $Env:OneDrive /grant \"*S-1-5-32-544:(D,DC)\"
 
-          $OneDriveLeftovers = @(\"$Env:LocalAppData\\Microsoft\\OneDrive\", \"$Env:ProgramData\\Microsoft OneDrive\")
-          foreach ($LeftoverPath in $OneDriveLeftovers) {
-              if (Test-Path -LiteralPath $LeftoverPath -ErrorAction Stop) {
-                  Remove-Item -LiteralPath $LeftoverPath -Recurse -Force -ErrorAction Stop
-              }
-          }
-      } finally {
-          if ($OneDriveFolderExists) {
-              # Restore access even when uninstall or leftover cleanup fails.
-              Set-Acl -LiteralPath $OneDrivePath -AclObject $OneDriveAcl -ErrorAction Stop
-          }
-      }
-
-      if ($OneDriveFolderExists -and -not (Get-ChildItem -LiteralPath $OneDrivePath -Force -ErrorAction Stop)) {
-          # Refuse to delete if files appeared after the emptiness check.
-          [System.IO.Directory]::Delete($OneDrivePath, $false)
+      if (-not (Get-ChildItem -Path $Env:OneDrive)) {
+          Remove-Item -Path $Env:OneDrive -Recurse
           [Environment]::SetEnvironmentVariable('OneDrive', $null, 'User')
       }
 
-      # OneSyncSvc is a per-user template; Get-Service only exposes user instances.
-      # Skip the operation if this Windows installation has no template.
-      if (Test-Path -LiteralPath 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\OneSyncSvc') {
-          Set-Service -Name OneSyncSvc -StartupType Disabled
-      }
+      # Disable OneSyncSvc
+      Set-Service -Name OneSyncSvc -StartupType Disabled
       "
     ],
     "UndoScript": [
@@ -754,10 +1330,8 @@
       Write-Host \"Installing OneDrive\"
       winget install Microsoft.Onedrive --source winget
 
-      # Enable OneSyncSvc when the per-user service template exists
-      if (Test-Path -LiteralPath 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\OneSyncSvc') {
-          Set-Service -Name OneSyncSvc -StartupType Automatic
-      }
+      # Enabled OneSyncSvc
+      Set-Service -Name OneSyncSvc -StartupType Automatic
       "
     ],
     "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/removeonedrive"
@@ -823,7 +1397,7 @@
         "Path": "HKCU:\\Control Panel\\Keyboard",
         "Name": "KeyboardDelay",
         "Value": "0",
-        "Type": "String",
+        "Type": "DWord",
         "OriginalValue": "1"
       },
       {
@@ -864,6 +1438,20 @@
       {
         "Path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
         "Name": "TaskbarMn",
+        "Value": "0",
+        "Type": "DWord",
+        "OriginalValue": "1"
+      },
+      {
+        "Path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+        "Name": "ShowTaskViewButton",
+        "Value": "0",
+        "Type": "DWord",
+        "OriginalValue": "1"
+      },
+      {
+        "Path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+        "Name": "SearchboxTaskbarMode",
         "Value": "0",
         "Type": "DWord",
         "OriginalValue": "1"
@@ -985,20 +1573,8 @@
           Remove-AppxPackage $Appx
       }
 
-      # WSAIFabricSvc only exists on some Windows 11 builds; without the guard a
-      # missing service aborts the rest of this script block and Recall stays enabled
-      if (Get-Service -Name WSAIFabricSvc -ErrorAction SilentlyContinue) {
-          Set-Service -Name WSAIFabricSvc -StartupType Disabled
-      }
-      # Store/MSIX PowerShell 7 can hang or fail COM activation in DISM.
-      $RecallCommand = {
-          Disable-WindowsOptionalFeature -FeatureName Recall -Online -NoRestart -ErrorAction Stop | Out-Null
-      }
-      $RecallOutput = powershell.exe -NoProfile -NonInteractive -Command $RecallCommand 2>&1
-      if ($LASTEXITCODE -ne 0) {
-          throw \"Failed to disable Recall (exit code $LASTEXITCODE): $(($RecallOutput | Out-String).Trim())\"
-      }
-      $RecallOutput | ForEach-Object { Write-Host $_ }
+      Set-Service -Name WSAIFabricSvc -StartupType Disabled
+      Disable-WindowsOptionalFeature -FeatureName Recall -Online -NoRestart
 
       Write-Host \"Windows AI Disabled\"
       "
@@ -1244,26 +1820,6 @@
     ],
     "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/teredo"
   },
-  "WPFTweaksDisableSearchIndexing": {
-    "Content": "Windows Search Indexing - Disable",
-    "Description": "Stops and disables the Windows Search service (WSearch) to cut background disk activity, mainly useful on mechanical hard drives. Warning: file searches in Explorer and the Start menu become much slower because Windows no longer maintains a search index. Undo restores the service and starts it again.",
-    "category": "z__Advanced Tweaks - CAUTION",
-    "panel": "1",
-    "service": [
-      {
-        "Name": "WSearch",
-        "StartupType": "Disabled",
-        "OriginalType": "Automatic"
-      }
-    ],
-    "InvokeScript": [
-      "$search = Get-Service -Name WSearch -ErrorAction SilentlyContinue\n      if ($search -and $search.StartType -eq 'Disabled' -and $search.Status -ne 'Stopped') {\n        Stop-Service -Name WSearch -Force -ErrorAction Stop\n      }"
-    ],
-    "UndoScript": [
-      "$search = Get-Service -Name WSearch -ErrorAction SilentlyContinue\n      if ($search -and $search.StartType -eq 'Automatic' -and $search.Status -ne 'Running') {\n        Start-Service -Name WSearch -ErrorAction Stop\n      }"
-    ],
-    "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/disablesearchindexing"
-  },
   "WPFTweaksDisableIPv6": {
     "Content": "IPv6 - Disable",
     "Description": "Disables IPv6.",
@@ -1301,6 +1857,78 @@
       }
     ],
     "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/disablebgapps"
+  },
+  "WPFTweaksDeBloat": {
+    "Content": "Remove ALL MS Store Apps - NOT RECOMMENDED",
+    "Description": "High impact: removes a legacy WinUtil list of Microsoft Store apps for all users and deprovisions them for new accounts. This includes Minecraft Bedrock, Gaming Services, media apps, communications apps and some third-party Store apps when present. It does not literally remove every Store app: Microsoft Store and essential frameworks are left alone. No automatic Undo is available; removed apps and games must be reinstalled separately, and some app data may be lost.",
+    "category": "z__Advanced Tweaks - CAUTION",
+    "panel": "1",
+    "Checked": "False",
+    "appx": [
+      "Microsoft.Microsoft3DViewer",
+      "Microsoft.AppConnector",
+      "Microsoft.BingFinance",
+      "Microsoft.BingNews",
+      "Microsoft.BingSports",
+      "Microsoft.BingTranslator",
+      "Microsoft.BingWeather",
+      "Microsoft.BingFoodAndDrink",
+      "Microsoft.BingHealthAndFitness",
+      "Microsoft.BingTravel",
+      "Microsoft.MinecraftUWP",
+      "Microsoft.GamingServices",
+      "Microsoft.GetHelp",
+      "Microsoft.Getstarted",
+      "Microsoft.Messaging",
+      "Microsoft.MicrosoftSolitaireCollection",
+      "Microsoft.NetworkSpeedTest",
+      "Microsoft.News",
+      "Microsoft.Office.Lens",
+      "Microsoft.Office.Sway",
+      "Microsoft.Office.OneNote",
+      "Microsoft.OneConnect",
+      "Microsoft.People",
+      "Microsoft.Print3D",
+      "Microsoft.SkypeApp",
+      "Microsoft.Wallet",
+      "Microsoft.Whiteboard",
+      "Microsoft.WindowsAlarms",
+      "microsoft.windowscommunicationsapps",
+      "Microsoft.WindowsFeedbackHub",
+      "Microsoft.WindowsMaps",
+      "Microsoft.WindowsSoundRecorder",
+      "Microsoft.ConnectivityStore",
+      "Microsoft.ScreenSketch",
+      "Microsoft.MixedReality.Portal",
+      "Microsoft.ZuneMusic",
+      "Microsoft.ZuneVideo",
+      "Microsoft.MicrosoftOfficeHub",
+      "*EclipseManager*",
+      "*ActiproSoftwareLLC*",
+      "*AdobeSystemsIncorporated.AdobePhotoshopExpress*",
+      "*Duolingo-LearnLanguagesforFree*",
+      "*PandoraMediaInc*",
+      "*CandyCrush*",
+      "*BubbleWitch3Saga*",
+      "*Wunderlist*",
+      "*Flipboard*",
+      "*Twitter*",
+      "*Facebook*",
+      "*Royal Revolt*",
+      "*Sway*",
+      "*Speed Test*",
+      "*Dolby*",
+      "*Viber*",
+      "*ACGMediaPlayer*",
+      "*Netflix*",
+      "*OneCalendar*",
+      "*LinkedInforWindows*",
+      "*HiddenCityMysteryofShadows*",
+      "*Hulu*",
+      "*HiddenCity*",
+      "*AdobePhotoshopExpress*",
+      "*HotspotShieldFreeVPN*"
+    ]
   },
   "WPFTweaksDisableExplorerAutoDiscovery": {
     "Content": "File Explorer Automatic Folder Discovery - Disable",
@@ -1626,7 +2254,7 @@
         "Path": "HKCU:\\Control Panel\\Mouse",
         "Name": "MouseSpeed",
         "Value": "1",
-        "Type": "String",
+        "Type": "DWord",
         "OriginalValue": "0",
         "DefaultState": "true"
       },
@@ -1634,7 +2262,7 @@
         "Path": "HKCU:\\Control Panel\\Mouse",
         "Name": "MouseThreshold1",
         "Value": "6",
-        "Type": "String",
+        "Type": "DWord",
         "OriginalValue": "0",
         "DefaultState": "true"
       },
@@ -1642,7 +2270,7 @@
         "Path": "HKCU:\\Control Panel\\Mouse",
         "Name": "MouseThreshold2",
         "Value": "10",
-        "Type": "String",
+        "Type": "DWord",
         "OriginalValue": "0",
         "DefaultState": "true"
       }
@@ -1952,6 +2580,76 @@
     ],
     "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/gamemode"
   },
+  "WPFToggleGameDVR": {
+    "Content": "Game DVR Background Recording",
+    "Description": "Toggles Xbox Game Bar background capture (Record what happened). Turning it off avoids continuous video encoding while gaming. Screenshots and manual recording are not removed.",
+    "category": "Customize Preferences",
+    "panel": "2",
+    "Type": "Toggle",
+    "registry": [
+      {
+        "Path": "HKCU:\\System\\GameConfigStore",
+        "Name": "GameDVR_Enabled",
+        "Value": "1",
+        "Type": "DWord",
+        "OriginalValue": "0",
+        "DefaultState": "true"
+      },
+      {
+        "Path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+        "Name": "AppCaptureEnabled",
+        "Value": "1",
+        "Type": "DWord",
+        "OriginalValue": "0",
+        "DefaultState": "true"
+      }
+    ],
+    "link": "https://support.microsoft.com/en-us/windows/record-a-game-clip-on-your-pc-with-xbox-game-bar-2f477001-54df-4a17-b1fc-e4a4cb4ac28c"
+  },
+  "WPFToggleGamingMultimediaProfile": {
+    "Content": "Multimedia Gaming Profile",
+    "Description": "Toggles the MMCSS system profile: reserves 10% CPU for background tasks instead of 20% (SystemResponsiveness) and turns off multimedia network throttling (NetworkThrottlingIndex 0xFFFFFFFF). Turning it off restores the Windows defaults 20 and 10. FPS gains are not guaranteed.",
+    "category": "Customize Preferences",
+    "panel": "2",
+    "Type": "Toggle",
+    "registry": [
+      {
+        "Path": "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile",
+        "Name": "SystemResponsiveness",
+        "Value": "10",
+        "Type": "DWord",
+        "OriginalValue": "20",
+        "DefaultState": "false"
+      },
+      {
+        "Path": "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile",
+        "Name": "NetworkThrottlingIndex",
+        "Value": "-1",
+        "Type": "DWord",
+        "OriginalValue": "10",
+        "DefaultState": "false"
+      }
+    ],
+    "link": "https://learn.microsoft.com/en-us/windows/win32/procthread/multimedia-class-scheduler-service"
+  },
+  "WPFToggleFastStartup": {
+    "Content": "Fast Startup",
+    "Description": "Toggles Fast Startup (HiberbootEnabled). Turning it off makes Shut down perform a full shutdown, so drivers and the kernel start clean; boot can take a few seconds longer. Has no effect while hibernation is disabled.",
+    "category": "Customize Preferences",
+    "panel": "2",
+    "Type": "Toggle",
+    "registry": [
+      {
+        "Path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power",
+        "Name": "HiberbootEnabled",
+        "Value": "1",
+        "Type": "DWord",
+        "OriginalValue": "0",
+        "DefaultState": "true"
+      }
+    ],
+    "link": "https://learn.microsoft.com/en-us/troubleshoot/windows-client/setup-upgrade-and-drivers/fast-startup-causes-hibernation-file-to-be-created"
+  },
   "WPFToggleLongPaths": {
     "Content": "Enable Long Paths",
     "Description": "Toggles support for file paths longer than 260 characters in Explorer.",
@@ -1969,14 +2667,6 @@
       }
     ],
     "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/longpaths"
-  },
-  "WPFOOSUbutton": {
-    "Content": "O&O ShutUp10++ - Run",
-    "Description": "Downloads O&O ShutUp10++ (about 82 MB) from oo-software.com on every click and launches it. Nothing is installed; the file is saved under %LocalAppData%\\winutil.",
-    "category": "z__Advanced Tweaks - CAUTION",
-    "panel": "1",
-    "Type": "Button",
-    "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/oosubutton"
   },
   "WPFchangedns": {
     "Content": "DNS - Set to:",

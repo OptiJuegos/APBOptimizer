@@ -33,7 +33,7 @@ function Write-WinUtilLog {
     )
 
     # UI performance diagnostics are useful to developers but are too noisy for the release
-    # transcript. Compile.ps1 stamps local builds so DEBUG output cannot leak into CI artifacts.
+    # transcript. Only `Compile.ps1 -DebugLog` stamps builds that write DEBUG output.
     if ($Level -eq "DEBUG" -and ($null -eq $sync -or -not $sync.IsLocalCompile)) {
         return
     }

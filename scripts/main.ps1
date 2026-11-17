@@ -1,63 +1,6 @@
-Write-Host @"
-    CCCCCCCCCCCCCTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
- CCC::::::::::::CT:::::::::::::::::::::TT:::::::::::::::::::::T
-CC:::::::::::::::CT:::::::::::::::::::::TT:::::::::::::::::::::T
-C:::::CCCCCCCC::::CT:::::TT:::::::TT:::::TT:::::TT:::::::TT:::::T
-C:::::C       CCCCCCTTTTTT  T:::::T  TTTTTTTTTTTT  T:::::T  TTTTTT
-C:::::C                     T:::::T                T:::::T
-C:::::C                     T:::::T                T:::::T
-C:::::C                     T:::::T                T:::::T
-C:::::C                     T:::::T                T:::::T
-C:::::C                     T:::::T                T:::::T
-C:::::C                     T:::::T                T:::::T
-C:::::C       CCCCCC        T:::::T                T:::::T
-C:::::CCCCCCCC::::C      TT:::::::TT            TT:::::::TT
-CC:::::::::::::::C       T:::::::::T            T:::::::::T
-CCC::::::::::::C         T:::::::::T            T:::::::::T
-  CCCCCCCCCCCCC          TTTTTTTTTTT            TTTTTTTTTTT
+Write-Host "APBOptimizer - Tweaks (basado en WinUtil)"
 
-====Chris Titus Tech=====
-=====Windows Toolbox=====
-"@
-
-Write-WinUtilLog -Message "WinUtil $($sync.version) on PowerShell $($PSVersionTable.PSVersion) ($($PSVersionTable.PSEdition)), $([Environment]::OSVersion.VersionString), process $PID."
-
-# Load the configuration files
-
-$sync.configs.applicationsHashtable = @{}
-$sync.configs.applications.PSObject.Properties | ForEach-Object {
-    $sync.configs.applicationsHashtable[$_.Name] = $_.Value
-}
-
-$sync.configs.appxHashtable = @{}
-$sync.configs.appx.PSObject.Properties | ForEach-Object {
-    $sync.configs.appxHashtable[$_.Name] = $_.Value
-}
 $sync.preferences.theme = "Auto"
-$sync.preferences.packagemanager = "Winget"
-
-function Remove-WinUtilTempScript {
-    <#
-    .SYNOPSIS
-        Removes the temporary script downloaded by windev.ps1.
-
-    .DESCRIPTION
-        Deletes the current script only when it is a winutil-*.ps1 file in
-        the system temporary directory. This preserves normal file-backed
-        and in-memory WinUtil launches.
-    #>
-
-    $scriptPath = $PSCommandPath
-    $tempPath = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')
-
-    if (
-        $scriptPath -and
-        [IO.Path]::GetDirectoryName($scriptPath) -eq $tempPath -and
-        [IO.Path]::GetFileName($scriptPath) -like 'winutil-*.ps1'
-    ) {
-        Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue
-    }
-}
 
 #===========================================================================
 # Headless runs never build a window
@@ -96,8 +39,7 @@ if ($Preset -or $Config) {
     } finally {
         Close-WinUtilRunspacePool
         [System.GC]::Collect()
-        Remove-WinUtilTempScript
-        Close-WinUtilLog
+        Stop-Transcript | Out-Null
     }
 
     # An isolated elevated child and an explicit file launch own their process. The documented
@@ -134,10 +76,14 @@ $uiHandle = $uiShell.BeginInvoke()
 # leaving it to the thread that is building the window
 Start-WinUtilAssetRendering | Out-Null
 
-# Log the UI thread's Write-Host output, warnings and errors while the window is open
-while (-not $uiHandle.AsyncWaitHandle.WaitOne(250)) {
-    Receive-WinUtilStreamOutput -PowerShell $uiShell -Component "UI"
+# Build the job pool on the waiting thread so initialization cannot block WPF input.
+try {
+    Initialize-WinUtilRunspacePool | Out-Null
+} catch {
+    Write-WinUtilErrorRecord -ErrorRecord $_ -Component 'UI' -Context 'Preinitialize worker pool'
 }
+
+$uiHandle.AsyncWaitHandle.WaitOne() | Out-Null
 
 $uiFailed = $false
 try {
@@ -147,7 +93,13 @@ try {
     Write-WinUtilErrorRecord -ErrorRecord $_ -Component "UI" -Context "Interface thread stopped"
 }
 
-Receive-WinUtilStreamOutput -PowerShell $uiShell -Component "UI"
+foreach ($uiWarning in $uiShell.Streams.Warning) {
+    Write-WinUtilLog -Level "WARN" -Component "UI" -Message $uiWarning.Message
+}
+
+foreach ($uiError in $uiShell.Streams.Error) {
+    Write-WinUtilErrorRecord -ErrorRecord $uiError -Component "UI" -Context "Interface thread"
+}
 
 $uiShell.Dispose()
 $sync.UIRunspace.Dispose()
@@ -159,10 +111,8 @@ Wait-WinUtilRemainingWork
 
 Close-WinUtilRunspacePool
 [System.GC]::Collect()
-
-Remove-WinUtilTempScript
 Write-Host "Bye bye!" -ForegroundColor Cyan
-Close-WinUtilLog
+Stop-Transcript
 
 if ($uiFailed) {
     $global:LASTEXITCODE = 1

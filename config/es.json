@@ -1,0 +1,499 @@
+{
+  "WPFTweaksActivity": {
+    "Content": "Historial de actividad: desactivar",
+    "Description": "Impide que Windows publique o envíe las actividades del usuario. Conserva el historial del portapapeles."
+  },
+  "WPFTweaksHiber": {
+    "Content": "Hibernación: desactivar",
+    "Description": "Desactiva la hibernación, que guarda el contenido de la memoria antes de apagar el equipo. Esta función puede ser útil en portátiles."
+  },
+  "WPFTweaksWidget": {
+    "Content": "Widgets: eliminar",
+    "Description": "Elimina los widgets que aparecen en la esquina inferior izquierda de la barra de tareas."
+  },
+  "WPFTweaksRevertStartMenu": {
+    "Content": "Menú Inicio clásico: restaurar",
+    "Description": "Restaura el diseño del menú Inicio anterior al cambio gradual de Windows 25H2. ¡Esta opción no funciona en versiones más recientes de Windows!"
+  },
+  "WPFTweaksDisableStoreSearch": {
+    "Content": "Sugerencias de Microsoft Store: desactivar",
+    "Description": "Oculta las aplicaciones recomendadas de Microsoft Store al buscar programas desde el menú Inicio."
+  },
+  "WPFTweaksLocation": {
+    "Content": "Seguimiento de ubicación: desactivar",
+    "Description": "Desactiva el seguimiento de ubicación de Windows."
+  },
+  "WPFTweaksServices": {
+    "Content": "Servicios: ajustar inicio",
+    "Description": "Configura varios servicios para inicio manual o deshabilitado y ajusta SvcHostSplitThresholdInKB según la memoria del equipo. Puede reducir significativamente la cantidad de procesos svchost.exe."
+  },
+  "WPFTweaksServicesManual": {
+    "Content": "Servicios: inicio manual",
+    "Description": "Configura MapsBroker y StorSvc en Manual si conservan el tipo de inicio original. También ajusta SvcHostSplitThresholdInKB según la memoria RAM. Deshacer restaura los servicios, pero no revierte este valor del Registro."
+  },
+  "WPFTweaksServicesDisabled": {
+    "Content": "Servicios: deshabilitar opcionales",
+    "Description": "Deshabilita CscService, DiagTrack y SharedAccess si conservan su tipo de inicio original. Deshacer restaura sus tipos de inicio. Puede afectar Archivos sin conexión y la conexión compartida a Internet."
+  },
+  "WPFServiceGroupDiagnostics": {
+    "Content": "Desactivar servicios de diagnóstico",
+    "Description": "Despliega la flecha para elegir servicios de diagnóstico y telemetría de Windows: hosts de diagnóstico, Servicio de directivas de diagnóstico, DiagTrack, Informe de errores y el recopilador de Diagnostics Hub. Marcar o desmarcar solo prepara los cambios; pulsa Aplicar ajustes para desactivar los seleccionados o restaurar los desmarcados. La casilla principal selecciona todos los disponibles. Al desactivarlos dejan de funcionar los solucionadores de problemas, la detección de problemas y los informes de errores."
+  },
+  "WPFServiceGroupUseless": {
+    "Content": "Desactivar servicios innecesarios",
+    "Description": "Despliega la flecha para elegir servicios opcionales de Windows. Marcar o desmarcar solo prepara los cambios; pulsa Aplicar ajustes para desactivar los seleccionados o restaurar los desmarcados. La casilla principal selecciona todos los disponibles. Algunos servicios son importantes para la reproducción automática, la administración de dispositivos o las redes .NET. NetTcpPortSharing suele venir desactivado de fábrica; restaurarlo lo pone en inicio manual."
+  },
+  "WPFToggleServiceWdiSystemHost": {
+    "Content": "Host de diagnóstico del sistema (WdiSystemHost)",
+    "Description": "Lo utiliza el servicio de directivas de diagnóstico de Windows para resolver problemas del sistema. Desactivarlo impide algunos diagnósticos. Revertir restaura el inicio manual."
+  },
+  "WPFToggleServiceWdiServiceHost": {
+    "Content": "Host del servicio de diagnóstico (WdiServiceHost)",
+    "Description": "Ejecuta diagnósticos con permisos de servicio local. Desactivarlo impide algunas funciones de solución de problemas. Revertir restaura el inicio manual."
+  },
+  "WPFToggleServiceDiagTrack": {
+    "Content": "Experiencias de usuario conectadas (DiagTrack)",
+    "Description": "Servicio de telemetría y diagnóstico de Windows. Puede estar desactivado por el ajuste de telemetría. Revertir restaura el inicio automático."
+  },
+  "WPFToggleServiceShellHWDetection": {
+    "Content": "Detección de hardware (ShellHWDetection)",
+    "Description": "Muestra notificaciones de reproducción automática al conectar medios y dispositivos. Desactivarlo elimina esos avisos y puede afectar funciones relacionadas. Revertir restaura el inicio automático."
+  },
+  "WPFToggleServiceDPS": {
+    "Content": "Servicio de directivas de diagnóstico (DPS)",
+    "Description": "Necesario para detectar y resolver problemas de Windows. Microsoft recomienda mantenerlo activo. Desactivarlo puede impedir los diagnósticos. Revertir restaura el inicio automático."
+  },
+  "WPFToggleServiceWMPNetworkSvc": {
+    "Content": "Compartir multimedia en red (WMPNetworkSvc)",
+    "Description": "Comparte bibliotecas del Reproductor de Windows Media con dispositivos de la red. Desactivarlo detiene ese uso compartido. Revertir restaura el inicio manual. Puede no existir en algunas instalaciones."
+  },
+  "WPFToggleServicewisvc": {
+    "Content": "Servicio Windows Insider (wisvc)",
+    "Description": "Se utiliza para recibir versiones de prueba del programa Windows Insider. Desactivarlo puede afectar ese programa. Revertir restaura el inicio manual. El servicio puede no estar instalado."
+  },
+  "WPFToggleServiceWerSvc": {
+    "Content": "Informes de errores de Windows (WerSvc)",
+    "Description": "Recopila e informa sobre fallos de aplicaciones y del sistema. Desactivarlo reduce los informes y la información de diagnóstico. Revertir restaura el inicio manual."
+  },
+  "WPFToggleServiceFontCache3000": {
+    "Content": "Caché de fuentes WPF (FontCache3.0.0.0)",
+    "Description": "Almacena fuentes en caché para aplicaciones antiguas de Windows Presentation Foundation. Desactivarlo puede ralentizar algunas aplicaciones .NET/WPF. Suele faltar en Windows recientes. Revertir restaura el inicio manual."
+  },
+  "WPFToggleServiceRetailDemo": {
+    "Content": "Servicio de demostración comercial (RetailDemo)",
+    "Description": "Permite mostrar experiencias de demostración en equipos de tiendas. Desactivarlo impide usar el modo de demostración comercial. Revertir restaura el inicio manual."
+  },
+  "WPFToggleServiceDiagnosticsHub": {
+    "Content": "Recopilador de diagnósticos (diagnosticshub.standardcollector.service)",
+    "Description": "Recopila eventos de seguimiento de Windows (ETW) para herramientas de diagnóstico y desarrollo. Desactivarlo puede afectar la captura de trazas y los analizadores de rendimiento. Revertir restaura el inicio manual."
+  },
+  "WPFToggleServiceDmwappushservice": {
+    "Content": "Administración de dispositivos WAP Push (dmwappushservice)",
+    "Description": "Gestiona mensajes de administración remota de dispositivos. Desactivarlo puede interrumpir Intune, la administración MDM y la inscripción de dispositivos. Revertir restaura el inicio manual."
+  },
+  "WPFToggleServiceWhesvc": {
+    "Content": "Salud y experiencias optimizadas de Windows (whesvc)",
+    "Description": "Supervisa la salud del dispositivo para optimizar funciones de Windows. Desactivarlo puede afectar esas funciones; no existe en todas las versiones. Revertir restaura el inicio automático y arranca el servicio."
+  },
+  "WPFToggleServiceNetTcpPortSharing": {
+    "Content": "Uso compartido de puertos Net.TCP (NetTcpPortSharing)",
+    "Description": "Permite que aplicaciones Windows Communication Foundation compartan puertos TCP. Windows suele traerlo deshabilitado, por eso su casilla puede aparecer marcada. Al desmarcarlo queda en inicio manual sin arrancarlo, para aplicaciones que usan WCF."
+  },
+  "WPFTweaksDisableWindowsSearch": {
+    "Content": "Indexación de Windows Search: desactivar",
+    "Description": "Detiene el servicio Windows Search (WSearch) y desactiva su inicio. Reduce la indexación en segundo plano, pero puede ralentizar o impedir las búsquedas de archivos, Inicio y Outlook. Revertir restaura el inicio automático diferido y vuelve a iniciar el servicio."
+  },
+  "WPFTweaksDisableSearchWebView2": {
+    "Content": "Procesos WebView2 de la búsqueda de Inicio: desactivar [reinicio]",
+    "Description": "Evita que SearchHost.exe mantenga procesos msedgewebview2.exe abiertos en segundo plano. Escribe en el Registro el mismo cambio que 'vivetool /disable /id:37926450' (SearchWebView2), sin ejecutar ViVeTool. También desactiva la nueva interfaz de búsqueda del menú Inicio. Microsoft puede renombrar o quitar esta función en una actualización y entonces el cambio deja de tener efecto. Requiere reiniciar. Revertir quita el cambio."
+  },
+  "WPFTweaksDisableEdgeBackground": {
+    "Content": "Procesos de Edge en segundo plano: desactivar",
+    "Description": "Desactiva el modo en segundo plano y el inicio rápido de Microsoft Edge mediante directivas. No elimina Edge ni WebView2, que siguen usando otras aplicaciones. Revertir quita ambas directivas."
+  },
+  "WPFDriverGroupOptional": {
+    "Content": "Desactivar drivers innecesarios",
+    "Description": "Opciones avanzadas: marcar o desmarcar solo prepara los cambios. Pulsa Aplicar ajustes para realizarlos; antes de desactivar drivers aparece una confirmación. Se guarda la configuración original para restaurarla y se requiere reiniciar. Los drivers Boot/System y críticos están protegidos y los ausentes se ocultan. No se borran archivos .sys. Puede afectar DRM, red y energía; UCPD.sys tiene un ajuste independiente."
+  },
+  "WPFToggleDriverTelemetry": {
+    "Content": "Telemetría Intel (Telemetry / 20H2)",
+    "Description": "Driver Telemetry de Intel, diferente al servicio DiagTrack. Si Windows ya lo tiene deshabilitado, APBOptimizer no lo cambia ni inventa su configuración original."
+  },
+  "WPFToggleDriverPEAUTH": {
+    "Content": "Medios protegidos (PEAUTH.sys)",
+    "Description": "Autenticación de medios protegidos de Windows. Deshabilitar puede impedir reproducir contenido DRM. Solo para sistemas que no lo necesitan y cuando su arranque no sea crítico."
+  },
+  "WPFToggleDriverTcpipreg": {
+    "Content": "Compatibilidad TCP/IP (tcpipreg.sys)",
+    "Description": "Driver de compatibilidad con aplicaciones que consultan configuraciones TCP/IP antiguas. Desactivarlo puede afectar aplicaciones de red antiguas; no equivale a desactivar tcpip.sys."
+  },
+  "WPFToggleDriverIntelPMT": {
+    "Content": "Monitoreo de plataforma Intel (IntelPMT.sys)",
+    "Description": "Monitorización de plataforma Intel. Puede participar en diagnóstico y políticas de rendimiento/energía de software Intel o del fabricante."
+  },
+  "WPFToggleDriverAppLockerFltr": {
+    "Content": "Filtro de AppLocker (AppLockerFltr.sys)",
+    "Description": "Controlador de control de aplicaciones AppLocker. Deshabilitarlo puede afectar la aplicación de políticas de seguridad. Solo permite cambios si está instalado, su identidad coincide y no tiene arranque Boot/System ni errores críticos. Guarda el inicio anterior para Deshacer; requiere reiniciar."
+  },
+  "WPFToggleDriverGpuEnergyDrv": {
+    "Content": "Consumo de GPU (GpuEnergyDrv.sys)",
+    "Description": "Driver de Windows que monitoriza energía de GPU. Puede afectar métricas y funciones de ahorro energético, especialmente en portátiles."
+  },
+  "WPFToggleDriverIObitUnlocker": {
+    "Content": "Driver de IObit Unlocker (IObitUnlocker.sys)",
+    "Description": "Driver de IObit Unlocker. Puede ser necesario para desbloquear archivos ocupados; si ya no usas el programa, lo preferible es desinstalarlo."
+  },
+  "WPFTweaksDisableUCPD": {
+    "Content": "UCPD.sys y UCPD velocity: desactivar",
+    "Description": "Ajuste independiente. UCPD protege las asociaciones predeterminadas del navegador, PDF y otras opciones de Windows. Aplicar guarda el inicio original del driver y el estado de la tarea UCPD velocity; deshabilita ambos sin borrar la tarea. Deshacer restaura sus valores originales. Requiere reiniciar y Windows Update puede reactivarlos. Desactiva una protección de Windows; úsalo solo si es necesario."
+  },
+  "WPFTaskGroupTelemetry": {
+    "Content": "Desactivar tareas programadas innecesarias",
+    "Description": "Despliega la flecha para elegir tareas de telemetría, compatibilidad, multimedia y Firefox. Marcar o desmarcar solo prepara los cambios: pulsa Aplicar ajustes para desactivar las seleccionadas o restaurar las que APBOptimizer había desactivado. La casilla principal selecciona todas las disponibles. Las tareas ausentes se ocultan y las desactivadas anteriormente sin copia de seguridad quedan protegidas."
+  },
+  "WPFToggleTaskCompatibilityAppraiser": {
+    "Content": "Microsoft Compatibility Appraiser",
+    "Description": "Evalúa la compatibilidad de las aplicaciones y del equipo con nuevas versiones de Windows. Desactivarlo puede afectar las evaluaciones de actualización."
+  },
+  "WPFToggleTaskProgramDataUpdater": {
+    "Content": "ProgramDataUpdater",
+    "Description": "Actualiza los datos de programas utilizados para compatibilidad y diagnósticos. Se puede restaurar al estado anterior."
+  },
+  "WPFToggleTaskConsolidator": {
+    "Content": "Consolidator (CEIP)",
+    "Description": "Consolida datos opcionales del programa de experiencia del cliente de Windows."
+  },
+  "WPFToggleTaskUsbCeip": {
+    "Content": "UsbCeip (USB)",
+    "Description": "Recopila diagnósticos opcionales sobre el uso de dispositivos USB."
+  },
+  "WPFToggleTaskKernelCeip": {
+    "Content": "KernelCeipTask (kernel)",
+    "Description": "Recopila datos opcionales de experiencia y diagnóstico del núcleo de Windows."
+  },
+  "WPFToggleTaskCompatibilityAppraiserExp": {
+    "Content": "Microsoft Compatibility Appraiser Exp",
+    "Description": "Tarea adicional de telemetría y compatibilidad de Windows. Desactivarla puede afectar las comprobaciones de compatibilidad para actualizar el sistema."
+  },
+  "WPFToggleTaskWindowsMediaSharing": {
+    "Content": "Windows Media Sharing: UpdateLibrary",
+    "Description": "Actualiza la biblioteca multimedia compartida por red. Es opcional si no compartes música, videos o fotos con otros dispositivos."
+  },
+  "WPFToggleTaskUsageDataReporting": {
+    "Content": "Flighting: UsageDataReporting",
+    "Description": "Envía informes sobre el uso de características de Windows. Desactivarla puede afectar informes o configuraciones internas de funciones."
+  },
+  "WPFToggleTaskSustainabilityTelemetry": {
+    "Content": "SustainabilityTelemetry",
+    "Description": "Recopila datos sobre sostenibilidad y energía. No desactiva PowerGridForecastTask."
+  },
+  "WPFToggleTaskFirefoxDefaultBrowserAgent": {
+    "Content": "Firefox Default Browser Agent",
+    "Description": "Comprueba los cambios de navegador predeterminado. Busca el identificador específico de Firefox automáticamente y guarda el estado de cada tarea encontrada. No desactiva las actualizaciones de Firefox."
+  },
+  "WPFTweaksDisableTelemetryTasks": {
+    "Content": "Tareas de telemetría (compatibilidad anterior)",
+    "Description": "Entrada oculta para importar configuraciones antiguas. Las casillas individuales se encuentran en Desactivar tareas programadas innecesarias."
+  },
+  "WPFTweaksPauseWindows2099": {
+    "Content": "Windows Update: pausar hasta 2099",
+    "Description": "Pausa experimental mediante fechas del Registro hasta el 17 de agosto de 2099. Microsoft admite oficialmente hasta 35 días, por lo que Windows puede ignorar o reajustar la fecha. Se recomienda activar primero una pausa de 7 días desde Configuración, pero no es obligatorio. Aplicar conserva los valores anteriores y Deshacer los restaura. No cambia servicios, tareas programadas ni DLL protegidas. Si Windows respeta la pausa, tampoco recibirá actualizaciones de seguridad."
+  },
+  "WPFTweaksDisableMemoryIntegrity": {
+    "Content": "Integridad de memoria (HVCI): desactivar [reinicio]",
+    "Description": "Ajuste avanzado de Windows 10 y 11. Desactiva la integridad de memoria (HVCI) con Enabled=0 en el Registro y reduce la protección frente a malware del núcleo. Requiere administrador y reiniciar. No desactiva todo VBS, Credential Guard ni el hipervisor. Protege los equipos con políticas o bloqueo UEFI y conserva el valor original (incluso si no existía) para restaurarlo con Deshacer ajustes seleccionados. Se recomienda usar Seguridad de Windows > Seguridad del dispositivo > Aislamiento del núcleo para hacerlo manualmente. La mejora de rendimiento varía según el equipo y el juego; no está garantizada."
+  },
+  "WPFTweaksDisablePowerThrottling": {
+    "Content": "Power Throttling: desactivar [reinicio recomendado]",
+    "Description": "Desactiva la limitación de energía de procesos en Windows 10 y 11 estableciendo PowerThrottlingOff=1 en el Registro. Puede beneficiar tareas que Windows limita en segundo plano, pero normalmente no mejora los FPS de juegos en primer plano. Puede aumentar consumo, temperatura, ruido del ventilador y gasto de batería. Requiere administrador; se recomienda reiniciar. No modifica el plan de energía ni otros ajustes de CPU. Guarda el valor original, incluso si no existía, para restaurarlo con Deshacer ajustes seleccionados. Una directiva del sistema puede volver a configurar este valor."
+  },
+  "WPFTweaksDisableDevicePowerSaving": {
+    "Content": "Suspensión selectiva de USB y ahorro de PCIe: desactivar",
+    "Description": "Ajuste del plan de energía de Windows 10 y 11. Usa powercfg para desactivar la suspensión selectiva de USB y la administración de energía del estado de vínculos de PCI Express (ASPM) con el equipo enchufado (AC) en el plan activo, y luego vuelve a activar el plan. Puede reducir cortes del mouse, mando o audio USB y la latencia de PCIe; la mejora no está garantizada. No cambia los valores con batería (DC) ni otros planes. El consumo y la temperatura en reposo pueden subir un poco. Requiere administrador; no hace falta reiniciar. Guarda los valores AC originales y el GUID del plan para restaurarlos con Deshacer ajustes seleccionados."
+  },
+  "WPFTweaksDisableCPUMitigations": {
+    "Content": "Disable Mitigations (Spectre/Meltdown) [reinicio]",
+    "Description": "Desactiva mitigaciones del sistema operativo contra ataques de ejecución especulativa, entre ellos Spectre variante 2 y Meltdown. Establece FeatureSettingsOverride=3 y FeatureSettingsOverrideMask=3 según el script CPU_Mitigations.bat y la documentación de Microsoft. No desactiva todas las protecciones del procesador ni del firmware. Reduce considerablemente la seguridad, sobre todo al ejecutar software no confiable. La mejora de rendimiento no está garantizada. Requiere administrador y reiniciar Windows. Guarda ambos valores originales del Registro (incluso si no existían) para restaurarlos con Deshacer ajustes seleccionados. No ejecuta ningún programa externo."
+  },
+  "WPFTweaksBraveDebloat": {
+    "Content": "Brave: quitar funciones adicionales",
+    "Description": "Desactiva funciones como Brave Rewards, Leo AI, la billetera de criptomonedas y la VPN."
+  },
+  "WPFTweaksDisableWarningForUnsignedRdp": {
+    "Content": "Avisos RDP sin firma: desactivar",
+    "Description": "Desactiva las advertencias al abrir archivos RDP sin firma, introducidas en actualizaciones recientes de Windows 10 y 11."
+  },
+  "WPFTweaksEdgeDebloat": {
+    "Content": "Microsoft Edge: quitar funciones adicionales",
+    "Description": "Desactiva varias opciones de telemetría, ventanas emergentes y otras funciones molestas de Microsoft Edge."
+  },
+  "WPFTweaksConsumerFeatures": {
+    "Content": "Funciones para consumidores: desactivar",
+    "Description": "Evita la instalación de aplicaciones promocionadas y reduce las sugerencias de contenido de Microsoft Store."
+  },
+  "WPFTweaksTelemetry": {
+    "Content": "Telemetría: desactivar",
+    "Description": "Desactiva la telemetría de Microsoft."
+  },
+  "WPFTweaksDeliveryOptimization": {
+    "Content": "Optimización de distribución: desactivar",
+    "Description": "Impide que Windows utilice tu conexión para subir actualizaciones a otros equipos de Internet o de la red local."
+  },
+  "WPFTweaksRemoveEdge": {
+    "Content": "Microsoft Edge: eliminar",
+    "Description": "Desinstala Microsoft Edge creando un archivo MicrosoftEdge.exe ficticio en la carpeta antigua del navegador. Esto permite desbloquear el desinstalador oficial de Edge y eliminarlo del sistema."
+  },
+  "WPFTweaksDisableBitLocker": {
+    "Content": "BitLocker: desactivar",
+    "Description": "Desactiva el cifrado de unidades BitLocker."
+  },
+  "WPFTweaksUTC": {
+    "Content": "Fecha y hora: usar UTC",
+    "Description": "Recomendado para equipos con arranque dual. Corrige diferencias de sincronización horaria con Linux."
+  },
+  "WPFTweaksRemoveOneDrive": {
+    "Content": "Microsoft OneDrive: eliminar",
+    "Description": "Bloquea temporalmente el permiso para eliminar archivos personales de OneDrive, ejecuta su desinstalador y luego restaura el permiso original."
+  },
+  "WPFTweaksRemoveHomeAndGallery": {
+    "Content": "Explorador: ocultar Inicio y Galería",
+    "Description": "Oculta Inicio y Galería del Explorador de archivos y establece Este equipo como vista predeterminada."
+  },
+  "WPFTweaksDisplay": {
+    "Content": "Efectos visuales: máximo rendimiento",
+    "Description": "Ajusta los efectos visuales de Windows para priorizar el rendimiento. También puedes hacerlo manualmente desde sysdm.cpl."
+  },
+  "WPFTweaksReservedStorage": {
+    "Content": "Almacenamiento reservado: desactivar",
+    "Description": "Desactiva el almacenamiento reservado de Windows (entre 7 y 10 GB para actualizaciones y archivos temporales). Se recomienda solo en unidades pequeñas. Vuelve a activarlo antes de actualizaciones importantes para evitar errores de instalación."
+  },
+  "WPFTweaksRestorePoint": {
+    "Content": "Punto de restauración: crear",
+    "Description": "Crea un punto de restauración del sistema por si necesitas revertir cambios realizados con APBOptimizer."
+  },
+  "WPFTweaksEndTaskOnTaskbar": {
+    "Content": "Finalizar tarea con clic derecho: activar",
+    "Description": "Permite finalizar una aplicación desde su menú contextual en la barra de tareas."
+  },
+  "WPFTweaksStorage": {
+    "Content": "Sensor de almacenamiento: desactivar",
+    "Description": "Desactiva el Sensor de almacenamiento, que elimina automáticamente archivos temporales."
+  },
+  "WPFTweaksWindowsAI": {
+    "Content": "IA de Windows: desactivar y eliminar",
+    "Description": "Elimina y desactiva las funciones y los paquetes de inteligencia artificial de Windows."
+  },
+  "WPFTweaksWPBT": {
+    "Content": "Tabla binaria de Windows (WPBT): desactivar",
+    "Description": "WPBT permite que el fabricante ejecute programas al arrancar, como herramientas antirrobo y controladores, e incluso que instale software sin consentimiento. Puede representar un riesgo de seguridad."
+  },
+  "WPFTweaksPreventDeviceMetadataFromNetwork": {
+    "Content": "Impedir aplicaciones de dispositivos",
+    "Description": "Evita la instalación de software adicional al conectar dispositivos, como aplicaciones promocionadas al conectar un monitor. Este mecanismo puede suponer un riesgo de seguridad."
+  },
+  "WPFTweaksRazerBlock": {
+    "Content": "Instalación automática de Razer: bloquear",
+    "Description": "Bloquea la instalación de todo el software de Razer. Los dispositivos siguen funcionando sin ese software."
+  },
+  "WPFTweaksLogiBlock": {
+    "Content": "Instalación automática de Logitech: bloquear",
+    "Description": "Bloquea Logitech Download Assistant, que Windows Update reinstala junto con los controladores. Los dispositivos Logitech siguen funcionando sin él."
+  },
+  "WPFTweaksDisableNotifications": {
+    "Content": "Notificaciones y calendario: desactivar",
+    "Description": "Desactiva todas las notificaciones del área de notificación, incluido el calendario."
+  },
+  "WPFTweaksBlockAdobeNet": {
+    "Content": "Bloquear servidores de Adobe: activar",
+    "Description": "Reduce las interrupciones bloqueando de forma selectiva las conexiones a servidores de activación y telemetría de Adobe. Créditos: Ruddernation-Designs."
+  },
+  "WPFTweaksRightClickMenu": {
+    "Content": "Menú contextual clásico: restaurar",
+    "Description": "Recupera el menú contextual clásico del Explorador de archivos en lugar del menú simplificado de Windows 11."
+  },
+  "WPFTweaksDiskCleanup": {
+    "Content": "Liberador de espacio: ejecutar",
+    "Description": "Ejecuta el Liberador de espacio en la unidad C: y elimina archivos de actualizaciones antiguas de Windows."
+  },
+  "WPFTweaksDeleteTempFiles": {
+    "Content": "Archivos temporales: eliminar",
+    "Description": "Elimina el contenido de las carpetas TEMP."
+  },
+  "WPFTweaksIPv46": {
+    "Content": "IPv6: dar prioridad a IPv4",
+    "Description": "Da prioridad a IPv4. Puede mejorar la latencia y la seguridad en redes privadas donde IPv6 no está configurado."
+  },
+  "WPFTweaksTeredo": {
+    "Content": "Teredo: desactivar",
+    "Description": "Desactiva Teredo, un mecanismo de túneles IPv6 que puede añadir latencia. Desactivarlo puede causar problemas con algunos juegos."
+  },
+  "WPFTweaksDisableIPv6": {
+    "Content": "IPv6: desactivar",
+    "Description": "Desactiva el protocolo IPv6."
+  },
+  "WPFTweaksDisableBGapps": {
+    "Content": "Aplicaciones en segundo plano: desactivar",
+    "Description": "Impide que las aplicaciones de Microsoft Store se ejecuten en segundo plano. En Windows 11, normalmente hay que configurarlas por separado."
+  },
+  "WPFTweaksDeBloat": {
+    "Content": "Eliminar apps de Microsoft Store - NO RECOMENDADO",
+    "Description": "Elimina para todos los usuarios una lista de aplicaciones de Microsoft Store usada por WinUtil y evita que se instalen automáticamente en cuentas nuevas. Incluye Minecraft Bedrock, Gaming Services, apps multimedia, de comunicación y algunas apps de terceros si están instaladas. No elimina absolutamente todas las apps: conserva Microsoft Store y los componentes esenciales. No tiene restauración automática; tendrás que reinstalar las aplicaciones y juegos por separado y podrías perder datos."
+  },
+  "WPFTweaksDisableExplorerAutoDiscovery": {
+    "Content": "Detección de carpetas: desactivar",
+    "Description": "Impide que el Explorador adivine el tipo de carpeta según sus archivos, lo que puede ralentizar la navegación. ¡Atención! También desactiva la agrupación de archivos."
+  },
+  "WPFToggleDetailedBSoD": {
+    "Content": "Pantalla azul: información detallada",
+    "Description": "Muestra más información cuando se produce una pantalla azul de error (BSOD)."
+  },
+  "WPFToggleBatteryPercentage": {
+    "Content": "Porcentaje de batería en la bandeja",
+    "Description": "Muestra el porcentaje numérico junto al icono de batería en el área de notificación."
+  },
+  "WPFToggleDarkMode": {
+    "Content": "Tema oscuro de Windows",
+    "Description": "Activa el modo oscuro del sistema y de las aplicaciones."
+  },
+  "WPFToggleShowExt": {
+    "Content": "Extensiones de archivos visibles",
+    "Description": "Muestra las extensiones de archivos en el Explorador (.exe, .png, etc.)."
+  },
+  "WPFToggleHiddenFiles": {
+    "Content": "Archivos ocultos visibles",
+    "Description": "Muestra los archivos ocultos en el Explorador."
+  },
+  "WPFToggleVerboseLogon": {
+    "Content": "Mensajes detallados de inicio de sesión",
+    "Description": "Muestra mensajes detallados durante el inicio y el apagado de Windows."
+  },
+  "WPFToggleNewOutlook": {
+    "Content": "Nueva versión de Microsoft Outlook",
+    "Description": "Configura Windows para utilizar la nueva aplicación Outlook."
+  },
+  "WPFToggleScrollbars": {
+    "Content": "Barras de desplazamiento siempre visibles",
+    "Description": "Al activarlo, las barras de desplazamiento permanecen visibles. Al desactivarlo, Windows las oculta automáticamente cuando no se usan."
+  },
+  "WPFMultiplaneOverlay": {
+    "Content": "Superposición multiplano (MPO)",
+    "Description": "La superposición multiplano compone varias capas de imagen y puede causar problemas con ciertas tarjetas gráficas. Los cambios se aplican de inmediato.",
+    "ComboItems": {
+      "Enabled": "Activado",
+      "Disabled (Compatibility)": "Desactivado (compatibilidad)",
+      "Fully Disabled": "Completamente desactivado"
+    },
+    "ComboDescriptions": {
+      "Enabled": "Utiliza el comportamiento predeterminado de superposición de Windows.",
+      "Disabled (Compatibility)": "Desactiva MPO mediante OverlayTestMode=5, un método de compatibilidad menos agresivo.",
+      "Fully Disabled": "Desactiva MPO mediante OverlayTestMode=5 y DisableOverlays=1, un método más agresivo."
+    }
+  },
+  "WPFToggleMouseAcceleration": {
+    "Content": "Aceleración del mouse",
+    "Description": "Hace que el movimiento del cursor dependa de la velocidad a la que mueves físicamente el mouse."
+  },
+  "WPFToggleNumLock": {
+    "Content": "Bloq Num al iniciar",
+    "Description": "Activa o desactiva la tecla Bloq Num cuando arranca el equipo."
+  },
+  "WPFToggleWindowSnapping": {
+    "Content": "Ajuste de ventanas",
+    "Description": "Activa o desactiva el ajuste automático de ventanas al arrastrarlas."
+  },
+  "WPFToggleStandbyFix": {
+    "Content": "Conexión de red en suspensión S0",
+    "Description": "Permite activar o desactivar la conexión de red durante la suspensión S0, un estado de bajo consumo usado en portátiles modernos."
+  },
+  "WPFToggleS3Sleep": {
+    "Content": "Suspensión S3",
+    "Description": "Alterna entre suspensión moderna y S3. En S3, se corta la alimentación de la CPU mientras se mantiene la memoria."
+  },
+  "WPFToggleHideSettingsHome": {
+    "Content": "Página Inicio de Configuración",
+    "Description": "Muestra u oculta la página Inicio de la aplicación Configuración de Windows."
+  },
+  "WPFToggleBingSearch": {
+    "Content": "Búsqueda web de Bing en Inicio",
+    "Description": "Muestra u oculta resultados web de Bing en la búsqueda de Windows."
+  },
+  "WPFToggleLoginBlur": {
+    "Content": "Desenfoque de la pantalla de inicio de sesión",
+    "Description": "Activa o desactiva el efecto de desenfoque acrílico del fondo de inicio de sesión."
+  },
+  "WPFToggleDisableLockscreen": {
+    "Content": "Pantalla de bloqueo: desactivar",
+    "Description": "Omite la pantalla de bloqueo y abre directamente la pantalla de inicio de sesión al arrancar o reactivar Windows."
+  },
+  "WPFToggleStartMenuRecommendations": {
+    "Content": "Recomendaciones del menú Inicio",
+    "Description": "Muestra u oculta las recomendaciones del menú Inicio. Atención: al desactivarlas también se desactiva el contenido destacado de Windows Spotlight en la pantalla de bloqueo."
+  },
+  "WPFToggleStickyKeys": {
+    "Content": "Teclas especiales",
+    "Description": "Activa o desactiva las teclas especiales, que pueden activarse al pulsar Mayús varias veces seguidas."
+  },
+  "WPFToggleTaskbarAlignment": {
+    "Content": "Iconos centrados en la barra de tareas",
+    "Description": "Cambia la alineación de los iconos de la barra de tareas entre izquierda y centro."
+  },
+  "WPFToggleTaskbarSearch": {
+    "Content": "Icono de búsqueda en la barra de tareas",
+    "Description": "Muestra u oculta el botón de búsqueda de la barra de tareas."
+  },
+  "WPFToggleTaskView": {
+    "Content": "Icono Vista de tareas",
+    "Description": "Muestra u oculta el botón Vista de tareas de la barra de tareas."
+  },
+  "WPFToggleGameMode": {
+    "Content": "Modo Juego",
+    "Description": "Activa o desactiva el Modo Juego, que da prioridad al rendimiento de los juegos al asignar recursos del sistema."
+  },
+  "WPFToggleGameDVR": {
+    "Content": "Grabación en segundo plano (Game DVR)",
+    "Description": "Activa o desactiva la captura en segundo plano de Xbox Game Bar (Grabar lo que ha sucedido). Al desactivarla se evita codificar vídeo continuamente mientras juegas. No elimina las capturas de pantalla ni la grabación manual."
+  },
+  "WPFToggleGamingMultimediaProfile": {
+    "Content": "Perfil multimedia para juegos",
+    "Description": "Activa o desactiva el perfil de sistema de MMCSS: reserva un 10 % de CPU para tareas en segundo plano en lugar del 20 % (SystemResponsiveness) y desactiva la limitación de red multimedia (NetworkThrottlingIndex 0xFFFFFFFF). Al desactivarlo se restauran los valores de Windows, 20 y 10. No garantiza más FPS."
+  },
+  "WPFToggleFastStartup": {
+    "Content": "Inicio rápido",
+    "Description": "Activa o desactiva el Inicio rápido (HiberbootEnabled). Al desactivarlo, Apagar realiza un apagado completo y los drivers y el kernel arrancan limpios; el arranque puede tardar unos segundos más. No tiene efecto si la hibernación está desactivada."
+  },
+  "WPFToggleLongPaths": {
+    "Content": "Rutas de archivos largas: activar",
+    "Description": "Activa o desactiva la compatibilidad con rutas de archivos de más de 260 caracteres en el Explorador."
+  },
+  "WPFchangedns": {
+    "Content": "DNS: seleccionar servidor:",
+    "Description": "Selecciona la configuración o el proveedor DNS, incluidos servidores con filtros opcionales de malware, contenido para adultos, anuncios o rastreadores.",
+    "ComboItems": {
+      "Default": "Predeterminado",
+      "DHCP": "DHCP",
+      "Fastest": "Más rápido",
+      "Google": "Google",
+      "Cloudflare": "Cloudflare",
+      "Cloudflare_Malware": "Cloudflare (malware)",
+      "Cloudflare_Malware_Adult": "Cloudflare (malware y adultos)",
+      "Open_DNS": "OpenDNS",
+      "Quad9": "Quad9",
+      "AdGuard_Ads_Trackers": "AdGuard (anuncios y rastreadores)",
+      "AdGuard_Ads_Trackers_Malware_Adult": "AdGuard (anuncios, rastreadores, malware y adultos)"
+    }
+  },
+  "WPFAddUltPerf": {
+    "Content": "Plan Máximo rendimiento: activar",
+    "Description": "Activa el plan de energía Máximo rendimiento. Está pensado para equipos de escritorio; puede aumentar el consumo energético y no se recomienda en portátiles."
+  },
+  "WPFRemoveUltPerf": {
+    "Content": "Plan Máximo rendimiento: desactivar",
+    "Description": "Elimina el plan de energía Máximo rendimiento para dejar de utilizarlo."
+  },
+  "Categories": {
+    "Essential Tweaks": "Ajustes esenciales",
+    "Advanced Tweaks - CAUTION": "Ajustes avanzados - PRECAUCIÓN",
+    "Customize Preferences": "Personalizar preferencias",
+    "Performance Plans - NOT FOR LAPTOPS": "Planes de energía - NO PARA PORTÁTILES"
+  }
+}

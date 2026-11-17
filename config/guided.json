@@ -1,0 +1,565 @@
+{
+  "Questions": [
+    {
+      "Id": "RestorePoint",
+      "Benefits": {
+        "en": ["Provides a recovery point for system settings if a later change causes problems.", "Helps you try adjustments with a way to roll back; it does not replace a backup of personal files."],
+        "es": ["Te permite recuperar la configuración del sistema si algún cambio causa problemas.", "Facilita probar ajustes con una opción para volver atrás; no sustituye una copia de tus archivos personales."]
+      },
+      "Section": "basic",
+      "Category": { "en": "Before you start", "es": "Antes de empezar" },
+      "Title": { "en": "Create a restore point before applying the changes?", "es": "¿Crear un punto de restauración antes de aplicar los cambios?" },
+      "Body": { "en": "If something does not work as expected, you can roll Windows back to today's state from System Restore.", "es": "Si algo no funciona como esperabas, podrás volver Windows al estado de hoy desde Restaurar sistema." },
+      "Details": {
+        "en": [
+          "Turns System Restore on for the system drive when it has no restore points yet.",
+          "Removes the Windows limit of one restore point every 24 hours.",
+          "The point is created before any other guided change."
+        ],
+        "es": [
+          "Activa Restaurar sistema en la unidad del sistema si todavía no tiene puntos de restauración.",
+          "Quita el límite de Windows de un punto de restauración cada 24 horas.",
+          "El punto se crea antes que cualquier otro cambio del modo guiado."
+        ]
+      },
+      "Note": { "en": "To roll back later, search Start for \"Create a restore point\" and open System Restore.", "es": "Para volver atrás, busca \"Crear un punto de restauración\" en Inicio y abre Restaurar sistema." },
+      "Summary": { "en": "Create a restore point", "es": "Crear punto de restauración" },
+      "YesLabel": { "en": "Yes, create it", "es": "Sí, crearlo" },
+      "Recommended": true,
+      "Reversible": true,
+      "Actions": [ { "Key": "WPFTweaksRestorePoint" } ]
+    },
+    {
+      "Id": "StartupApps",
+      "Section": "basic",
+      "Category": { "en": "Startup applications", "es": "Aplicaciones de inicio" },
+      "Title": { "en": "Which apps should start with Windows?", "es": "¿Qué aplicaciones quieres iniciar con Windows?" },
+      "Body": { "en": "Right (on): starts with Windows. Left (off): does not start with Windows. You can turn each app on or off. Changes are saved only when you apply the plan.", "es": "Derecha (encendido): inicia con Windows. Izquierda (apagado): no inicia con Windows. Puedes encender o apagar cada aplicación. Los cambios se guardan al aplicar el plan." },
+      "Details": {
+        "en": ["Switches reflect the current state. Only changed apps are enabled or disabled at sign-in; no app is launched, uninstalled or closed now.", "Saves their original state. To revert a change, return here, move its switch back and apply the plan."],
+        "es": ["Los interruptores reflejan el estado actual. Solo cambia el inicio de las apps que modifiques; no abre, desinstala ni cierra aplicaciones ahora.", "Guarda su estado anterior. Para revertir un cambio, vuelve aquí, mueve su interruptor al estado anterior y aplica el plan."]
+      },
+      "Benefits": {
+        "en": ["May reduce sign-in load and background RAM/CPU use if those apps would otherwise stay running."],
+        "es": ["Puede reducir la carga al iniciar sesión y el consumo de RAM y CPU si esas apps iban a quedar funcionando."]
+      },
+      "Note": { "en": "Keep apps you need at sign-in switched on. Only policy-managed or unknown-state entries are read-only; their reason appears below the name.", "es": "Deja encendidas las apps que necesites al iniciar sesión. Solo se bloquean las entradas administradas por una directiva o con estado desconocido; el motivo aparece debajo del nombre." },
+      "Summary": { "en": "Configure selected startup apps", "es": "Configurar aplicaciones de inicio seleccionadas" },
+      "YesLabel": { "en": "Next", "es": "Siguiente" },
+      "NoLabel": { "en": "Keep current settings", "es": "Dejar como están" },
+      "DataSource": "StartupApps",
+      "OptionStyle": "Toggle",
+      "Options": [],
+      "Recommended": false,
+      "Reversible": true
+    },
+    {
+      "Id": "StoreApps",
+      "Section": "basic",
+      "Category": { "en": "Store applications", "es": "Aplicaciones de Microsoft Store" },
+      "Title": { "en": "Which Store applications would you like to uninstall?", "es": "¿Qué aplicaciones de Microsoft Store querés desinstalar?" },
+      "Body": { "en": "Review the apps installed for your account, including optional Windows apps such as Photos, Xbox and Teams when present. Select only those you no longer need. Windows system components, the Store and shared runtimes are excluded.", "es": "Revisá las aplicaciones de tu usuario, incluidas las opcionales de Windows como Fotos, Xbox y Teams cuando estén instaladas. Marcá solo las que ya no uses. Se excluyen componentes del sistema, Microsoft Store y dependencias compartidas." },
+      "Benefits": {
+        "en": ["Remove unused optional apps without touching Windows system components.", "No app is selected by default; removals are made only when you apply the plan."],
+        "es": ["Quitá aplicaciones opcionales que no uses sin tocar componentes esenciales de Windows.", "Ninguna aplicación viene seleccionada; solo se desinstalan al aplicar el plan."]
+      },
+      "Note": { "en": "Uninstalling can delete application-specific data. Undo cannot reinstall the app or restore its data. Only the current user's package registration is removed; provisioned packages may return for new accounts.", "es": "La desinstalación puede borrar datos propios de la aplicación. Deshacer no reinstala la app ni recupera sus datos. Solo se quita del usuario actual; los paquetes provisionados pueden reaparecer para usuarios nuevos." },
+      "Summary": { "en": "Uninstall selected Store apps", "es": "Desinstalar aplicaciones seleccionadas" },
+      "YesLabel": { "en": "Next", "es": "Siguiente" },
+      "NoLabel": { "en": "Keep all apps", "es": "Conservar todas" },
+      "DataSource": "AppxPackages",
+      "OptionStyle": "Toggle",
+      "Options": [],
+      "Recommended": false,
+      "Reversible": false
+    },
+    {
+      "Id": "Telemetry",
+      "Benefits": {
+        "en": ["Less usage reporting, promotions and suggested apps, depending on the options you select.", "May reduce background CPU, RAM and network use if the selected tasks and components were active."],
+        "es": ["Menos envío de datos de uso, promociones y apps sugeridas, según las opciones que elijas.", "Puede reducir el consumo de CPU, RAM y red en segundo plano si las tareas y los componentes elegidos estaban activos."]
+      },
+      "Section": "basic",
+      "Category": { "en": "Privacy", "es": "Privacidad" },
+      "Title": { "en": "Cut Windows telemetry and promotions?", "es": "¿Cortar la telemetría y las promociones de Windows?" },
+      "Body": { "en": "Windows sends usage data to Microsoft and installs or suggests apps on its own. Each option is separate: clear the ones you want to keep.", "es": "Windows envía datos de uso a Microsoft e instala o sugiere apps por su cuenta. Cada opción es independiente: desmarca las que quieras conservar." },
+      "Summary": { "en": "Privacy", "es": "Privacidad" },
+      "YesLabel": { "en": "Next", "es": "Siguiente" },
+      "NoLabel": { "en": "None", "es": "Ninguna" },
+      "Recommended": true,
+      "Reversible": true,
+      "Options": [
+        {
+          "Id": "Telemetry",
+          "Default": true,
+          "Label": { "en": "Turn off telemetry and promoted apps", "es": "Desactivar telemetría y apps promocionadas" },
+          "Detail": { "en": "Diagnostic data at the minimum level, no advertising ID, no typing and voice data collection and no feedback prompts. Disables DiagTrack and error reporting, stops automatic Defender sample submission and stops Windows from installing promoted apps.", "es": "Datos de diagnóstico al mínimo, sin ID de publicidad, sin recopilar lo que escribes o dictas y sin encuestas de opinión. Deshabilita DiagTrack y el informe de errores, frena el envío automático de muestras de Defender y evita que Windows instale apps promocionadas." },
+          "Actions": [ { "Key": "WPFTweaksTelemetry" }, { "Key": "WPFTweaksConsumerFeatures" } ]
+        },
+        {
+          "Id": "TelemetryTasks",
+          "Default": true,
+          "Label": { "en": "Turn off telemetry scheduled tasks", "es": "Desactivar tareas programadas de telemetría" },
+          "Detail": { "en": "Compatibility Appraiser, ProgramDataUpdater, the Customer Experience Improvement Program tasks, UsageDataReporting and SustainabilityTelemetry. Their state is saved so they can be restored.", "es": "Compatibility Appraiser, ProgramDataUpdater, las tareas del Programa de mejora de la experiencia del cliente, UsageDataReporting y SustainabilityTelemetry. Se guarda su estado para poder restaurarlas." },
+          "Actions": [ { "Key": "WPFTaskGroupTelemetry", "Members": [ "WPFToggleTaskCompatibilityAppraiser", "WPFToggleTaskProgramDataUpdater", "WPFToggleTaskConsolidator", "WPFToggleTaskUsbCeip", "WPFToggleTaskKernelCeip", "WPFToggleTaskCompatibilityAppraiserExp", "WPFToggleTaskUsageDataReporting", "WPFToggleTaskSustainabilityTelemetry" ] } ]
+        },
+        {
+          "Id": "DeliveryOptimization",
+          "Default": true,
+          "Label": { "en": "Turn off Delivery Optimization", "es": "Desactivar Optimización de distribución" },
+          "Detail": { "en": "Windows stops uploading updates to other PCs on the Internet or your network. Updates still download normally.", "es": "Windows deja de subir actualizaciones a otras PCs de Internet o de tu red. Las actualizaciones se siguen descargando normal." },
+          "Actions": [ { "Key": "WPFTweaksDeliveryOptimization" } ]
+        },
+        {
+          "Id": "VendorSoftware",
+          "Default": true,
+          "Label": { "en": "Block vendor software installs", "es": "Bloquear software de fabricantes" },
+          "Detail": { "en": "Blocks programs the PC vendor runs from the firmware (WPBT), companion apps Windows downloads when you plug in devices and Logi Download Assistant. Devices keep working. If you use the vendor's anti-theft software, clear this option.", "es": "Bloquea programas que el fabricante ejecuta desde el firmware (WPBT), las apps que Windows descarga al conectar dispositivos y Logi Download Assistant. Los dispositivos siguen funcionando. Si usas el antirrobo del fabricante, desmarca esta opción." },
+          "Actions": [ { "Key": "WPFTweaksWPBT" }, { "Key": "WPFTweaksPreventDeviceMetadataFromNetwork" }, { "Key": "WPFTweaksLogiBlock" } ]
+        },
+        {
+          "Id": "StartRecommendations",
+          "Default": true,
+          "Label": { "en": "Hide Start recommendations", "es": "Ocultar recomendaciones de Inicio" },
+          "Detail": { "en": "Hides the Recommended section of Start and suggested Store apps when you search. It also turns off Windows Spotlight on the lock screen. Explorer restarts once.", "es": "Oculta la sección Recomendado del menú Inicio y las apps sugeridas de la Store al buscar. También apaga Windows Spotlight en la pantalla de bloqueo. El Explorador se reinicia una vez." },
+          "Actions": [ { "Key": "WPFToggleStartMenuRecommendations", "State": false }, { "Key": "WPFTweaksDisableStoreSearch" } ]
+        }
+      ]
+    },
+    {
+      "Id": "BackgroundApps",
+      "Benefits": {
+        "en": ["May reduce RAM and CPU use by preventing unused Store apps from working in the background.", "Less background syncing and network activity from those apps while you play."],
+        "es": ["Puede reducir el consumo de memoria RAM y CPU al impedir que las apps de la Tienda trabajen en segundo plano.", "Menos sincronización y actividad de red de esas apps mientras juegas."]
+      },
+      "Section": "basic",
+      "Category": { "en": "Performance", "es": "Rendimiento" },
+      "Title": { "en": "Stop Store apps from running in the background?", "es": "¿Impedir que las apps de la Tienda funcionen en segundo plano?" },
+      "Body": { "en": "Fewer processes and less memory use while you play. Some apps may send notifications only while they are open.", "es": "Menos procesos y memoria en uso mientras juegas. Algunas apps pueden avisar solo mientras están abiertas." },
+      "Details": {
+        "en": [
+          "Blocks background execution of every Store app for your user.",
+          "Classic programs such as Steam, Discord or driver tools are not affected.",
+          "Apps such as Mail, Phone Link or Xbox stop syncing and notifying while closed."
+        ],
+        "es": [
+          "Bloquea para tu usuario la ejecución en segundo plano de todas las apps de la Tienda.",
+          "No afecta a programas clásicos como Steam, Discord o las herramientas de los drivers.",
+          "Apps como Correo, Vincular teléfono o Xbox dejan de sincronizar y avisar mientras están cerradas."
+        ]
+      },
+      "Summary": { "en": "Turn off background Store apps", "es": "Desactivar apps de la Tienda en segundo plano" },
+      "Recommended": true,
+      "Reversible": true,
+      "Actions": [ { "Key": "WPFTweaksDisableBGapps" } ]
+    },
+    {
+      "Id": "VisualEffects",
+      "Benefits": {
+        "en": ["Fewer animations and visual effects can make windows and menus feel more responsive.", "May reduce graphics work on modest PCs; a noticeable improvement is not guaranteed."],
+        "es": ["Menos animaciones y efectos pueden hacer que las ventanas y los menús respondan con mayor rapidez.", "Puede reducir el trabajo gráfico en equipos modestos; no garantiza una mejora perceptible."]
+      },
+      "Section": "basic",
+      "Category": { "en": "Performance", "es": "Rendimiento" },
+      "Title": { "en": "Set visual effects for best performance?", "es": "¿Ajustar los efectos visuales para el máximo rendimiento?" },
+      "Body": { "en": "Removes animations, shadows and transparency from windows and menus. On modest PCs Windows feels faster; on powerful PCs the difference is small.", "es": "Quita animaciones, sombras y transparencias de ventanas y menús. En PCs modestas Windows se siente más rápido; en PCs potentes la diferencia es pequeña." },
+      "Details": {
+        "en": [
+          "No animations when minimizing and maximizing windows or on the taskbar.",
+          "Windows show only their outline while you drag them.",
+          "No shadows or translucent selection in Explorer, and no Aero Peek.",
+          "Menus open faster (200 ms instead of 400 ms) and key repeat starts sooner.",
+          "Hides Search, Task View and Chat from the taskbar."
+        ],
+        "es": [
+          "Sin animaciones al minimizar y maximizar ventanas ni en la barra de tareas.",
+          "Las ventanas muestran solo su contorno mientras las arrastras.",
+          "Sin sombras ni selección translúcida en el Explorador, y sin Aero Peek.",
+          "Los menús abren más rápido (200 ms en lugar de 400 ms) y la repetición de teclas empieza antes.",
+          "Oculta Buscar, Vista de tareas y Chat de la barra de tareas."
+        ]
+      },
+      "Note": { "en": "Some effects change only after you sign out or restart.", "es": "Algunos efectos cambian recién al cerrar sesión o reiniciar." },
+      "Summary": { "en": "Visual effects for best performance", "es": "Efectos visuales para máximo rendimiento" },
+      "Recommended": false,
+      "Reversible": true,
+      "Actions": [ { "Key": "WPFTweaksDisplay" } ]
+    },
+    {
+      "Id": "Services",
+      "Benefits": {
+        "en": ["May reduce RAM and CPU use when selected services were running and are not needed.", "Disabling indexing avoids its background disk activity; the difference depends on the PC and the selected services."],
+        "es": ["Puede reducir el consumo de memoria RAM y CPU si los servicios seleccionados estaban activos y no los necesitas.", "Desactivar la indexación evita su actividad de disco en segundo plano; la diferencia depende del equipo y de los servicios elegidos."]
+      },
+      "Section": "basic",
+      "Category": { "en": "Services", "es": "Servicios" },
+      "Title": { "en": "Which services should we adjust?", "es": "¿Qué servicios ajustamos?" },
+      "Body": { "en": "Windows starts many services that most PCs never use. Each group is separate: switch off the ones you want to leave as they are.", "es": "Windows arranca muchos servicios que la mayoría de las PCs no usa. Cada grupo es independiente: apaga los que quieras dejar como están." },
+      "Note": { "en": "Only installed services with the expected startup type are changed. Their startup type can be restored in advanced mode. The separate svchost registry adjustment is not undone.", "es": "Solo se modifican servicios instalados que conservan el tipo de inicio esperado. Su inicio se puede restaurar desde el modo avanzado. El ajuste separado del Registro para svchost no se revierte." },
+      "Summary": { "en": "Services", "es": "Servicios" },
+      "YesLabel": { "en": "Next", "es": "Siguiente" },
+      "NoLabel": { "en": "None", "es": "Ninguno" },
+      "OptionStyle": "Toggle",
+      "Recommended": true,
+      "Reversible": true,
+      "Options": [
+        {
+          "Id": "ServicesManual",
+          "Default": true,
+          "Label": { "en": "Windows services to Manual", "es": "Servicios de Windows en Manual" },
+          "Detail": { "en": "MapsBroker (downloaded maps) and StorSvc (storage) are set to Manual. Also adjusts the svchost.exe process split threshold based on RAM; undo restores the services but not this registry value.", "es": "MapsBroker (mapas descargados) y StorSvc (almacenamiento) pasan a Manual. También ajusta el umbral de procesos svchost.exe según la RAM; Deshacer restaura los servicios, pero no ese valor del Registro." },
+          "Actions": [ { "Key": "WPFTweaksServicesManual" } ]
+        },
+        {
+          "Id": "ServicesDisabled",
+          "Default": true,
+          "Label": { "en": "Disable optional Windows services", "es": "Deshabilitar servicios opcionales de Windows" },
+          "Detail": { "en": "Disables Offline Files (CscService), telemetry (DiagTrack) and Internet Connection Sharing (SharedAccess). If you share this PC's Internet connection or use Offline Files, leave this switch off.", "es": "Deshabilita Archivos sin conexión (CscService), telemetría (DiagTrack) y Conexión compartida a Internet (SharedAccess). Si compartes Internet desde esta PC o usas Archivos sin conexión, deja esta opción apagada." },
+          "Actions": [ { "Key": "WPFTweaksServicesDisabled" } ]
+        },
+        {
+          "Id": "DiagnosticServices",
+          "Default": true,
+          "Label": { "en": "Disable diagnostic services", "es": "Desactivar servicios de diagnóstico" },
+          "Detail": { "en": "Diagnostic hosts (WdiSystemHost, WdiServiceHost), Diagnostic Policy Service (DPS), DiagTrack, Windows Error Reporting (WerSvc) and the Diagnostics Hub Collector. Windows troubleshooters stop working.", "es": "Hosts de diagnóstico (WdiSystemHost, WdiServiceHost), Servicio de directivas de diagnóstico (DPS), DiagTrack, Informe de errores (WerSvc) y Recopilador de diagnósticos. Los solucionadores de problemas de Windows dejan de funcionar." },
+          "Actions": [ { "Key": "WPFServiceGroupDiagnostics" } ]
+        },
+        {
+          "Id": "UselessServices",
+          "Default": true,
+          "Label": { "en": "Disable unneeded services", "es": "Desactivar servicios innecesarios" },
+          "Detail": { "en": "AutoPlay (ShellHWDetection), Windows Media Player sharing, Windows Insider, Retail Demo, WPF Font Cache, Net.TCP Port Sharing, Windows Health and WAP Push. If a company manages this PC (Intune/MDM), switch this off.", "es": "Reproducción automática (ShellHWDetection), uso compartido del Reproductor de Windows Media, Windows Insider, Demo de tienda, caché de fuentes WPF, Net.TCP, Windows Health y mensajes push WAP. Si tu PC la administra una empresa (Intune/MDM), apágalo." },
+          "Actions": [ { "Key": "WPFServiceGroupUseless" } ]
+        },
+        {
+          "Id": "WindowsSearch",
+          "Default": true,
+          "Label": { "en": "Disable Windows Search indexing", "es": "Desactivar la indexación de Windows Search" },
+          "Detail": { "en": "Stops Windows Search (WSearch) and disables background indexing. File, Start menu and Outlook searches may become slower or stop finding results. Undo restores Automatic (Delayed Start) and starts the service.", "es": "Detiene Windows Search (WSearch) y deshabilita la indexación en segundo plano. Las búsquedas de archivos, del menú Inicio y de Outlook pueden volverse lentas o dejar de encontrar resultados. Deshacer restaura el inicio Automático (retrasado) y vuelve a iniciar el servicio." },
+          "Actions": [ { "Key": "WPFTweaksDisableWindowsSearch" } ]
+        },
+        {
+          "Id": "UCPD",
+          "Default": true,
+          "Reboot": true,
+          "Label": { "en": "Disable UCPD.sys", "es": "Desactivar UCPD.sys" },
+          "Detail": { "en": "Disables default-app association protection and the UCPD velocity task after restarting. May weaken protection of default apps; Undo restores both previous states.", "es": "Desactiva la protección de aplicaciones predeterminadas y la tarea UCPD velocity. Requiere reiniciar y puede reducir esa protección; Deshacer restaura los estados anteriores de ambos." },
+          "Actions": [ { "Key": "WPFTweaksDisableUCPD" } ]
+        }
+      ]
+    },
+    {
+      "Id": "WidgetsAI",
+      "Benefits": {
+        "en": ["Choose independently which Widgets and browser-backed components to remove or disable.", "Keep WebView2 available for other apps that depend on it."],
+        "es": ["Elegí por separado qué componentes de Widgets y funciones web querés quitar o desactivar.", "Conservá WebView2 para las otras aplicaciones que lo necesitan."]
+      },
+      "Section": "basic",
+      "Category": { "en": "Widgets and WebView2", "es": "Widgets y WebView2" },
+      "Title": { "en": "Which Windows web components should be disabled?", "es": "¿Qué componentes web de Windows querés desactivar?" },
+      "Body": { "en": "Select each change separately. No component is removed until you apply the plan.", "es": "Elegí cada cambio por separado. Nada se quita hasta que apliques el plan." },
+      "Note": { "en": "Uninstalled Widgets and AI packages are not restored by Undo. We could not verify a Teams-specific ViVeTool feature ID; that option is unavailable.", "es": "Deshacer no reinstala los paquetes de Widgets e IA. No se pudo verificar un ID de ViVeTool específico para Teams; esa opción no está disponible." },
+      "Summary": { "en": "Windows web components", "es": "Componentes web de Windows" },
+      "YesLabel": { "en": "Next", "es": "Siguiente" },
+      "NoLabel": { "en": "None", "es": "Ninguna" },
+      "Recommended": false,
+      "Reversible": true,
+      "Options": [
+        {
+          "Id": "RemoveWidgets",
+          "Default": true,
+          "Reversible": false,
+          "Label": { "en": "Remove Widgets", "es": "Quitar Widgets" },
+          "Detail": { "en": "Uninstalls Widgets and Windows Web Experience Pack, then restarts Explorer. Undo does not reinstall the packages.", "es": "Desinstala Widgets y Windows Web Experience Pack y reinicia el Explorador. Deshacer no reinstala los paquetes." },
+          "Actions": [ { "Key": "WPFTweaksWidget" } ]
+        },
+        {
+          "Id": "RemoveWindowsAI",
+          "Default": true,
+          "Reversible": false,
+          "Label": { "en": "Remove Copilot and Windows AI features", "es": "Quitar Copilot y funciones de IA de Windows" },
+          "Detail": { "en": "Removes Copilot and Microsoft 365 Office Hub, and disables Recall and Windows AI components. Package removal is not reversible.", "es": "Quita Copilot y Microsoft 365 Office Hub y desactiva Recall y otros componentes de IA. La desinstalación no se puede deshacer." },
+          "Actions": [ { "Key": "WPFTweaksWindowsAI" } ]
+        },
+        {
+          "Id": "SearchWebView2",
+          "Default": true,
+          "Reboot": true,
+          "Label": { "en": "Disable WebView2 in Start search", "es": "Desactivar WebView2 en la búsqueda de Inicio" },
+          "Detail": { "en": "Disables the SearchWebView2 Windows feature override (37926450). Restarts are required; Start search falls back to its previous interface. Windows updates may undo the effect.", "es": "Desactiva la característica SearchWebView2 (37926450). Requiere reiniciar; la búsqueda vuelve a su interfaz anterior. Una actualización podría anular el cambio." },
+          "Actions": [ { "Key": "WPFTweaksDisableSearchWebView2" } ]
+        },
+        {
+          "Id": "TeamsWebView2",
+          "Default": false,
+          "Unavailable": true,
+          "Label": { "en": "Disable Teams WebView2 (unavailable)", "es": "Desactivar WebView2 de Teams (no disponible)" },
+          "Detail": { "en": "A Teams-specific ViVeTool feature ID could not be verified. Disabling WebView2 globally would break Teams and other apps.", "es": "No se pudo verificar un ID de ViVeTool específico para Teams. Desactivar WebView2 globalmente rompería Teams y otras aplicaciones." },
+          "Actions": []
+        },
+        {
+          "Id": "EdgeBackground",
+          "Default": true,
+          "Label": { "en": "Disable Edge background mode and startup boost", "es": "Desactivar Edge en segundo plano e inicio rápido" },
+          "Detail": { "en": "Disables Microsoft's BackgroundModeEnabled and StartupBoostEnabled policies. Edge stops preloading at sign-in or remaining active after closing; WebView2 in other apps remains installed.", "es": "Desactiva las directivas BackgroundModeEnabled y StartupBoostEnabled. Edge deja de precargarse o seguir abierto al cerrar; WebView2 de otras aplicaciones sigue instalado." },
+          "Actions": [ { "Key": "WPFTweaksDisableEdgeBackground" } ]
+        }
+      ]
+    },
+    {
+      "Id": "Explorer",
+      "Benefits": {
+        "en": ["More direct access to local search and ending unresponsive apps, depending on your choices.", "Customize file extensions, Explorer navigation, hidden files, long paths and the classic context menu."],
+        "es": ["Acceso más directo a la búsqueda local y a cerrar apps que no responden, según lo que elijas.", "Personaliza extensiones, navegación del Explorador, archivos ocultos, rutas largas y el menú contextual clásico."]
+      },
+      "Section": "basic",
+      "Category": { "en": "Explorer and Windows 11", "es": "Explorador y Windows 11" },
+      "Title": { "en": "Make Windows 11 more comfortable to use?", "es": "¿Hacer Windows 11 más cómodo de usar?" },
+      "Body": { "en": "These changes are applied together. Clear the ones you do not want.", "es": "Aplicamos estos cambios juntos. Desmarca los que no quieras." },
+      "Note": { "en": "Disabling automatic folder detection erases saved folder views and grouping. Undo cannot recover those customizations; leave it unchecked unless you accept that loss.", "es": "Desactivar la detección automática borra vistas y agrupaciones de carpetas guardadas. Deshacer no las recupera; deja esa opción desmarcada si no quieres perderlas." },
+      "Summary": { "en": "Explorer and Windows 11", "es": "Explorador y Windows 11" },
+      "YesLabel": { "en": "Next", "es": "Siguiente" },
+      "NoLabel": { "en": "None", "es": "Ninguno" },
+      "Recommended": true,
+      "Reversible": true,
+      "Options": [
+        {
+          "Id": "ClassicContextMenu",
+          "Default": true,
+          "Label": { "en": "Classic context menu", "es": "Menú contextual clásico" },
+          "Detail": { "en": "Right-click shows every option without going through \"Show more options\". Explorer restarts once.", "es": "El clic derecho muestra todas las opciones sin pasar por \"Mostrar más opciones\". El Explorador se reinicia una vez." },
+          "Actions": [ { "Key": "WPFTweaksRightClickMenu" } ]
+        },
+        {
+          "Id": "NoBingSearch",
+          "Default": true,
+          "Label": { "en": "Remove Bing from Start search", "es": "Quitar Bing de la búsqueda de Inicio" },
+          "Detail": { "en": "Start searches only your PC, without web results.", "es": "Inicio busca solo en tu PC, sin resultados web." },
+          "Actions": [ { "Key": "WPFToggleBingSearch", "State": false } ]
+        },
+        {
+          "Id": "LongPaths",
+          "Default": true,
+          "Label": { "en": "Enable long file paths", "es": "Activar rutas de archivos largas" },
+          "Detail": { "en": "Allows paths longer than 260 characters. Useful for modded games and large projects.", "es": "Permite rutas de más de 260 caracteres. Útil para juegos con mods y proyectos grandes." },
+          "Actions": [ { "Key": "WPFToggleLongPaths", "State": true } ]
+        },
+        {
+          "Id": "HiddenFiles",
+          "Default": true,
+          "Label": { "en": "Show hidden files", "es": "Mostrar archivos ocultos" },
+          "Detail": { "en": "Folders such as AppData become visible in File Explorer.", "es": "Ves carpetas como AppData en el Explorador." },
+          "Actions": [ { "Key": "WPFToggleHiddenFiles", "State": true } ]
+        },
+        {
+          "Id": "FileExtensions",
+          "Default": true,
+          "Label": { "en": "Show file extensions", "es": "Mostrar extensiones de archivos" },
+          "Detail": { "en": "Shows extensions such as .exe, .png and .txt in File Explorer. Explorer restarts to apply the change.", "es": "Muestra extensiones como .exe, .png y .txt en el Explorador. Se reinicia el Explorador para aplicar el cambio." },
+          "Actions": [ { "Key": "WPFToggleShowExt", "State": true } ]
+        },
+        {
+          "Id": "HideHomeGallery",
+          "Default": false,
+          "Label": { "en": "Hide Explorer Home and Gallery", "es": "Ocultar Inicio y Galería del Explorador" },
+          "Detail": { "en": "Removes Home and Gallery from the navigation pane and opens This PC by default. Optional; Undo restores the default entries.", "es": "Quita Inicio y Galería del panel de navegación y abre Este equipo por defecto. Opcional; Deshacer restaura las entradas predeterminadas." },
+          "Actions": [ { "Key": "WPFTweaksRemoveHomeAndGallery" } ]
+        },
+        {
+          "Id": "DisableFolderDiscovery",
+          "Default": false,
+          "Reversible": false,
+          "Label": { "en": "Disable automatic folder type detection", "es": "Desactivar detección automática de tipos de carpeta" },
+          "Detail": { "en": "Forces the generic folder view and clears saved Explorer folder views and grouping. Undo re-enables detection but cannot restore those personalized views. Sign out or restart to apply.", "es": "Fuerza la vista genérica y borra vistas y agrupaciones de carpetas guardadas. Deshacer reactiva la detección, pero no recupera esas vistas personalizadas. Requiere cerrar sesión o reiniciar." },
+          "Actions": [ { "Key": "WPFTweaksDisableExplorerAutoDiscovery" } ]
+        },
+        {
+          "Id": "EndTask",
+          "Default": true,
+          "Label": { "en": "End task from the taskbar", "es": "Finalizar tarea desde la barra de tareas" },
+          "Detail": { "en": "Right-clicking an open app in the taskbar shows \"End task\", without opening Task Manager.", "es": "Al hacer clic derecho en una app abierta de la barra de tareas aparece \"Finalizar tarea\", sin abrir el Administrador de tareas." },
+          "Actions": [ { "Key": "WPFTweaksEndTaskOnTaskbar" } ]
+        }
+      ]
+    },
+    {
+      "Id": "GameDVR",
+      "Benefits": {
+        "en": ["Avoids background recording work if that feature was enabled.", "May reduce GPU, CPU and disk use while gaming when you do not need game recording."],
+        "es": ["Evita el trabajo de grabación en segundo plano si esa función estaba activada.", "Puede reducir el uso de GPU, CPU y disco al jugar cuando no necesitas grabar las partidas."]
+      },
+      "Section": "basic",
+      "Category": { "en": "Gaming", "es": "Juegos" },
+      "Title": { "en": "Turn off background recording (Game DVR)?", "es": "¿Desactivar la grabación en segundo plano (Game DVR)?" },
+      "Body": { "en": "Windows can keep recording the last minutes of play all the time. If you do not use it, turning it off frees GPU and disk while you play.", "es": "Windows puede grabar los últimos minutos de juego todo el tiempo. Si no lo usas, desactivarlo libera GPU y disco mientras juegas." },
+      "Details": {
+        "en": [
+          "Turns off \"Record what happened\" background capture in Xbox Game Bar.",
+          "Turns off Game DVR in the Windows game settings.",
+          "Xbox Game Bar itself stays installed."
+        ],
+        "es": [
+          "Apaga la captura en segundo plano (\"Grabar lo que pasó\") de Xbox Game Bar.",
+          "Apaga Game DVR en la configuración de juegos de Windows.",
+          "Xbox Game Bar sigue instalada."
+        ]
+      },
+      "Note": { "en": "Screenshots and manual recording keep working.", "es": "Las capturas de pantalla y la grabación manual siguen funcionando." },
+      "Summary": { "en": "Turn off Game DVR", "es": "Desactivar Game DVR" },
+      "YesLabel": { "en": "Yes, turn it off", "es": "Sí, desactivar" },
+      "NoLabel": { "en": "No, I use it", "es": "No, la uso" },
+      "Recommended": true,
+      "Reversible": true,
+      "Actions": [ { "Key": "WPFToggleGameDVR", "State": false } ]
+    },
+    {
+      "Id": "MultimediaProfile",
+      "Benefits": {
+        "en": ["Changes how Windows prioritizes multimedia work and background tasks.", "May help some gaming or multimedia workloads; it does not guarantee lower latency or more FPS."],
+        "es": ["Ajusta cómo Windows prioriza el trabajo multimedia y las tareas en segundo plano.", "Puede ayudar en algunas cargas de juegos o multimedia; no garantiza menor latencia ni más FPS."]
+      },
+      "Section": "basic",
+      "Category": { "en": "Gaming", "es": "Juegos" },
+      "Title": { "en": "Use the multimedia profile for gaming?", "es": "¿Usar el perfil multimedia para juegos?" },
+      "Body": { "en": "Windows reserves 10% of the CPU for background tasks instead of 20% and stops throttling network traffic during multimedia playback.", "es": "Windows reserva un 10 % de CPU para tareas en segundo plano en lugar del 20 % y deja de limitar la red durante la reproducción multimedia." },
+      "Details": {
+        "en": [
+          "SystemResponsiveness: 10 % reserved for background tasks (Windows uses 20 %).",
+          "NetworkThrottlingIndex: off. Windows normally limits network packets while audio or video plays.",
+          "It is a system-wide setting; no game file is changed."
+        ],
+        "es": [
+          "SystemResponsiveness: 10 % reservado para tareas en segundo plano (Windows usa 20 %).",
+          "NetworkThrottlingIndex: desactivado. Windows normalmente limita los paquetes de red mientras se reproduce audio o video.",
+          "Es un ajuste de todo el sistema; no se modifica ningún archivo de juegos."
+        ]
+      },
+      "Note": { "en": "FPS gains are not guaranteed.", "es": "No garantiza más FPS." },
+      "Summary": { "en": "Multimedia profile for gaming", "es": "Perfil multimedia para juegos" },
+      "Recommended": true,
+      "Reversible": true,
+      "Actions": [ { "Key": "WPFToggleGamingMultimediaProfile", "State": true } ]
+    },
+    {
+      "Id": "PowerPlan",
+      "Benefits": {
+        "en": ["Prioritizes performance over energy savings while the plan is active.", "May improve responsiveness in some workloads; the difference depends on the hardware and power management."],
+        "es": ["Prioriza el rendimiento sobre el ahorro de energía mientras el plan está activo.", "Puede mejorar la respuesta en algunas tareas; la diferencia depende del hardware y de la gestión de energía."]
+      },
+      "Section": "basic",
+      "Category": { "en": "Power", "es": "Energía" },
+      "Title": { "en": "Turn on the Ultimate Performance power plan?", "es": "¿Activar el plan de energía Máximo rendimiento?" },
+      "Body": { "en": "Windows stops lowering the processor speed and switching off hardware to save power, so the PC responds faster. It is meant for desktop PCs.", "es": "Windows deja de bajar la velocidad del procesador y de apagar partes del hardware para ahorrar energía, así la PC responde más rápido. Está pensado para PCs de escritorio." },
+      "Details": {
+        "en": [
+          "Adds a copy of the Ultimate Performance plan and makes it the active plan.",
+          "The processor keeps a high minimum speed and disks do not spin down.",
+          "It is applied before the USB and PCIe power question, so that change lands on the new plan.",
+          "To go back, choose another plan in Control Panel > Power Options."
+        ],
+        "es": [
+          "Agrega una copia del plan Máximo rendimiento y la deja como plan activo.",
+          "El procesador mantiene una velocidad mínima alta y los discos no se apagan.",
+          "Se aplica antes que el ahorro de energía de USB y PCIe, así ese cambio queda en el plan nuevo.",
+          "Para volver, elige otro plan en Panel de control > Opciones de energía."
+        ]
+      },
+      "Note": { "en": "Undo from advanced mode restores the default Windows power plans and deletes custom plans.", "es": "Deshacer desde el modo avanzado restablece los planes de energía de Windows y borra los planes personalizados." },
+      "Summary": { "en": "Ultimate Performance power plan", "es": "Plan de energía Máximo rendimiento" },
+      "YesLabel": { "en": "Yes, turn on", "es": "Sí, activar" },
+      "Advice": "PowerPlan",
+      "Recommended": false,
+      "Reversible": true,
+      "Actions": [ { "Key": "WPFAddUltPerf" } ]
+    },
+    {
+      "Id": "DevicePowerSaving",
+      "Benefits": {
+        "en": ["May reduce USB interruptions related to power-saving transitions while plugged in.", "Avoids PCIe link power-saving transitions in the active power plan."],
+        "es": ["Puede reducir interrupciones USB relacionadas con el ahorro de energía cuando el equipo está enchufado.", "Evita las transiciones de ahorro de energía del enlace PCIe en el plan activo."]
+      },
+      "Section": "basic",
+      "Category": { "en": "Gaming", "es": "Juegos" },
+      "Title": { "en": "Turn off USB and PCIe power saving?", "es": "¿Desactivar el ahorro de energía de USB y PCIe?" },
+      "Body": { "en": "Can reduce mouse, controller or USB audio dropouts. Only applies while the PC is plugged in, in the active power plan.", "es": "Puede reducir cortes del mouse, el mando o el audio USB. Solo se aplica con el equipo enchufado, en el plan de energía activo." },
+      "Details": {
+        "en": [
+          "USB selective suspend: off while plugged in.",
+          "PCI Express Link State Power Management: off while plugged in.",
+          "Battery settings are not changed.",
+          "The previous values are saved so Undo can restore them."
+        ],
+        "es": [
+          "Suspensión selectiva de USB: desactivada con el equipo enchufado.",
+          "Administración de energía del estado de vínculo PCI Express: desactivada con el equipo enchufado.",
+          "La configuración con batería no se toca.",
+          "Se guardan los valores anteriores para que Deshacer los restaure."
+        ]
+      },
+      "Note": { "en": "Power use at idle may increase slightly.", "es": "El consumo en reposo puede subir un poco." },
+      "Summary": { "en": "Turn off USB and PCIe power saving", "es": "Desactivar ahorro de USB y PCIe" },
+      "Recommended": true,
+      "Reversible": true,
+      "Actions": [ { "Key": "WPFTweaksDisableDevicePowerSaving" } ]
+    },
+    {
+      "Id": "TempFiles",
+      "Benefits": {
+        "en": ["Frees disk space occupied by temporary files, unnecessary system files and superseded Windows components.", "The amount depends on accumulated files; this does not free RAM directly."],
+        "es": ["Libera espacio de disco ocupado por temporales, archivos del sistema innecesarios y componentes antiguos de Windows.", "La cantidad depende de los archivos acumulados; no libera memoria RAM directamente."]
+      },
+      "Section": "basic",
+      "Category": { "en": "Cleanup", "es": "Limpieza" },
+      "Title": { "en": "Delete temporary files and clean the system?", "es": "¿Borrar archivos temporales y limpiar sistema?" },
+      "Body": { "en": "Empties temporary folders, then runs the same Disk Cleanup and Windows component cleanup available in advanced mode. This can take several minutes.", "es": "Vacía las carpetas temporales y ejecuta la misma limpieza de disco y componentes de Windows del modo avanzado. Puede tardar varios minutos." },
+      "Details": {
+        "en": [
+          "Empties %TEMP% and C:\\Windows\\Temp.",
+          "Temporary files in use are skipped; deleted files do not go to the Recycle Bin.",
+          "Runs cleanmgr on drive C: with Windows default cleanup options, without additional prompts.",
+          "Runs DISM /StartComponentCleanup /ResetBase to remove superseded Windows components."
+        ],
+        "es": [
+          "Vacía %TEMP% y C:\\Windows\\Temp.",
+          "Los temporales en uso se saltan; los archivos borrados no van a la Papelera.",
+          "Ejecuta cleanmgr en la unidad C: con las opciones predeterminadas de Windows, sin pedir otra confirmación.",
+          "Ejecuta DISM /StartComponentCleanup /ResetBase para eliminar componentes antiguos de Windows."
+        ]
+      },
+      "Note": { "en": "Cannot be undone. DISM /ResetBase prevents uninstalling updates already installed when the cleanup runs; future updates can still be uninstalled.", "es": "No se puede deshacer. DISM /ResetBase impide desinstalar las actualizaciones ya instaladas al ejecutar la limpieza; las actualizaciones futuras sí se pueden desinstalar." },
+      "Summary": { "en": "Delete temporary files and clean the system", "es": "Borrar archivos temporales y limpiar sistema" },
+      "Recommended": true,
+      "Reversible": false,
+      "Actions": [ { "Key": "WPFTweaksDeleteTempFiles" }, { "Key": "WPFTweaksDiskCleanup" } ]
+    },
+    {
+      "Id": "PauseUpdates",
+      "Benefits": {
+        "en": ["If Windows honors the pause, it can reduce update downloads and installation interruptions during that period.", "Gives you more control over when to resume updates; applying the dates does not guarantee that Windows will honor them."],
+        "es": ["Si Windows respeta la pausa, puede reducir las descargas de actualizaciones y las interrupciones de instalación durante ese período.", "Te permite elegir cuándo reanudar las actualizaciones; escribir las fechas no garantiza que Windows las respete."]
+      },
+      "Section": "advanced",
+      "Category": { "en": "Advanced", "es": "Avanzado" },
+      "Title": { "en": "Pause Windows Update until 2099?", "es": "¿Pausar Windows Update hasta 2099?" },
+      "Body": { "en": "Stops Windows from updating and restarting the PC on its own. It only changes the pause dates in the registry: no services or Windows files are touched.", "es": "Evita que Windows se actualice solo y reinicie el equipo. Solo cambia las fechas de pausa en el Registro: no toca servicios ni archivos de Windows." },
+      "Details": {
+        "en": [
+          "Writes pause dates until 2099 for quality, feature and general updates.",
+          "The previous values are saved; Undo restores them.",
+          "No service is disabled and no file is renamed."
+        ],
+        "es": [
+          "Escribe fechas de pausa hasta 2099 para actualizaciones de calidad, de características y generales.",
+          "Se guardan los valores anteriores; Deshacer los restaura.",
+          "No se deshabilita ningún servicio ni se renombra ningún archivo."
+        ]
+      },
+      "Note": { "en": "You will not receive security updates either. Microsoft only supports 35-day pauses, so Windows may ignore or reset the date.", "es": "Tampoco recibirás actualizaciones de seguridad. Microsoft solo admite pausas de 35 días, así que Windows puede ignorar la fecha o reiniciarla." },
+      "Summary": { "en": "Pause Windows Update until 2099", "es": "Pausar Windows Update hasta 2099" },
+      "YesLabel": { "en": "Yes, pause", "es": "Sí, pausar" },
+      "Recommended": false,
+      "Reversible": true,
+      "Actions": [ { "Key": "WPFTweaksPauseWindows2099" } ]
+    }
+  ]
+}

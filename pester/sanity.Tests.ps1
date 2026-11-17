@@ -173,7 +173,8 @@ Describe "Compiled WinUtil sanity" {
     It "replaces the generated build date placeholder" {
         $content = Get-Content -Path $script:compiledPath -Raw
         $expectedBuildDate = Get-Date -Format "yy.MM.dd"
-        $expectedLocalCompile = (-not [string]::Equals($env:GITHUB_ACTIONS, "true", [StringComparison]::OrdinalIgnoreCase)).ToString().ToLowerInvariant()
+        # Compiled here without -DebugLog, so DEBUG logging stays off
+        $expectedLocalCompile = "false"
 
         $content | Should -Not -Match ([regex]::Escape("#{replaceme}"))
         $content | Should -Not -Match ([regex]::Escape("#{islocalcompile}"))
